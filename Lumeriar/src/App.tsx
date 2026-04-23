@@ -2,6 +2,7 @@ import './App.css'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import Layout from './layout/Layout'
 import Login from './pages/login'
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 const HomePage = () => (
   <>
