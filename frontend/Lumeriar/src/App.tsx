@@ -1,8 +1,11 @@
 import './App.css'
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import Layout from './layout/Layout'
-import Login from './pages/login'
+import Login from './pages/Login'
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { AuthProvider } from './context/AuthContext';
+import PrivateRoute from './components/PrivateRoute';
+import Dashboard from './pages/Dashboard';
 
 const HomePage = () => (
   <>
@@ -67,15 +70,31 @@ const HomePage = () => (
 
 function App() {
   return (
-    <Layout>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/index.html" element={<HomePage />} />
-        <Route path="/pages/index.html" element={<HomePage />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </Layout>
+    <AuthProvider>
+      <Layout>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/index.html" element={<HomePage />} />
+          <Route path="/pages/index.html" element={<HomePage />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+
+          {/* Private routes — add as many as you need inside here */}
+          <Route element={<PrivateRoute />}>
+            {/* <Route path="/dashboard" element={<Dashboard />} /> */}
+            {/* <Route path="/profile"   element={<Profile />} /> */}
+            <Route
+              path="/dashboard"
+              element={<Dashboard />
+              }
+            />
+
+            {/* Catch-all */}
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Route>
+        </Routes>
+      </Layout>
+    </AuthProvider>
   )
 }
 
