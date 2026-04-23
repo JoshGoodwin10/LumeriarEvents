@@ -31,8 +31,16 @@
   box-sizing: border-box;
 }
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
 body {
   margin: 0;
+  padding: 0;
 }
 
 h1,
@@ -54,15 +62,26 @@ h1 {
 }
 
 h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
+  color: transparent;
+  background: linear-gradient(to bottom, var(--color-secondary), var(--color-secondary-dark));
+  font-family: 'Montserrat', sans-serif;
+  font-size: 40px;
+  font-weight: bolder;
+  letter-spacing: -1px;
+  padding-top: 50vh;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 700;
+  text-align: center;
 
   @media (max-width: 1024px) {
     font-size: 20px;
   }
 }
+
+
+h2 {}
 
 p {
   margin: 0;

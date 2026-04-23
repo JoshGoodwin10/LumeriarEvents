@@ -1,14 +1,15 @@
 import '../../layout/layout.css'
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom'
+import logo from '../../assets/LumeriarLogoNew.png'
 
 const Header = () => {
     return (
         <header className="site-header">
             <nav className="site-header__nav" id="navigation">
                 <div className="site-header__container">
-                    <a className="site-header__logo" href="/pages/index.html" aria-label="Lumeriar Robotics Home">
-                        <img src="/images/Lumeriar Logo New Just Text.png" alt="Lumeriar Robotics logo" />
-                    </a>
+                    <Link className="site-header__logo" to="/" aria-label="Lumeriar Robotics Home">
+                        <img src={logo} alt="Lumeriar Robotics logo" />
+                    </Link>
                     <button
                         className="site-header__toggle"
                         id="navToggle"
@@ -22,13 +23,12 @@ const Header = () => {
                         <span className="site-header__toggle-bar"></span>
                     </button>
                     <ul className="nav" id="mainNav">
-                        <li className="nav__item"><a className="nav__link" href="/pages/index.html">Home</a></li>
+                        <li className="nav__item"><Link className="nav__link" to="/">Home</Link></li>
                         <li className="nav__item"><a className="nav__link" href="/pages/about.html">About</a></li>
                         <li className="nav__item nav__item--dropdown">
                             <a className="nav__link" href="/pages/index.html#services">
                                 What We Offer <i className="fa fa-caret-down nav__caret"></i>
                             </a>
-                            <button onClick={() => navigate('/events')}>Events</button>
                             <ul className="nav__dropdown">
                                 <li className="nav__dropdown-item"><a className="nav__dropdown-link" href="/pages/curriculums.html">Curriculums</a></li>
                                 <li className="nav__dropdown-item"><a className="nav__dropdown-link" href="/pages/clubs.html">Clubs</a></li>
@@ -49,6 +49,7 @@ const Header = () => {
                         <li className="nav__item"><a className="nav__link" href="/pages/hardwarekits.html">Hardware &amp; Kits</a></li>
                         <li className="nav__item"><a className="nav__link" href="/pages/partners.html">Partners</a></li>
                         <li className="nav__item"><a className="nav__link" href="/pages/contact.html">Contact</a></li>
+                        <li className="nav__item"><Link className="nav__link" to="/login">Login</Link></li>
                     </ul>
                 </div>
             </nav>
