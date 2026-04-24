@@ -1,11 +1,12 @@
 import './App.css'
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import Layout from './layout/Layout'
 import Login from './pages/Login'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { AuthProvider } from './context/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
 import Dashboard from './pages/Dashboard';
+import TeamsDashboard from './pages/TeamsDashboard';
 
 const HomePage = () => (
   <>
@@ -83,11 +84,8 @@ function App() {
           <Route element={<PrivateRoute />}>
             {/* <Route path="/dashboard" element={<Dashboard />} /> */}
             {/* <Route path="/profile"   element={<Profile />} /> */}
-            <Route
-              path="/dashboard"
-              element={<Dashboard />
-              }
-            />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/teams" element={<TeamsDashboard />} />
 
             {/* Catch-all */}
             <Route path="*" element={<Navigate to="/login" replace />} />
