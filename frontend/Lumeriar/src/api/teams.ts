@@ -15,26 +15,26 @@ async function handleResponse(res: Response) {
 }
 
 export interface Team {
-  team_id:             number;
-  team_name:           string;
-  category:            string | null;
-  school_id:           number | null;
-  year:                number | null;
-  theme:               string | null;
+  team_id: number;
+  team_name: string;
+  category: string | null;
+  school_id: number | null;
+  year: number | null;
+  theme: string | null;
   project_description: string | null;
-  created_at:          string;
+  created_at: string;
 }
 
 export interface TeamFilters {
   school_id?: string;
-  category?:  string;
-  year?:      string;
-  search?:    string;
+  category?: string;
+  year?: string;
+  search?: string;
 }
 
 export interface FilterOptions {
   categories: string[];
-  years:      number[];
+  years: number[];
   school_ids: number[];
 }
 
@@ -42,9 +42,9 @@ export interface FilterOptions {
 export async function fetchTeams(filters: TeamFilters = {}): Promise<Team[]> {
   const params = new URLSearchParams();
   if (filters.school_id) params.set("school_id", filters.school_id);
-  if (filters.category)  params.set("category",  filters.category);
-  if (filters.year)      params.set("year",       filters.year);
-  if (filters.search)    params.set("search",     filters.search);
+  if (filters.category) params.set("category", filters.category);
+  if (filters.year) params.set("year", filters.year);
+  if (filters.search) params.set("search", filters.search);
 
   const res = await fetch(`${API_BASE}/api/teams?${params}`, { headers: authHeaders() });
   return handleResponse(res);
@@ -81,5 +81,54 @@ export async function deleteTeam(id: number) {
     method: "DELETE",
     headers: authHeaders(),
   });
+  return handleResponse(res);
+}
+
+// api/teams.ts
+
+export interface TeamWithDetails {
+  team: Team;
+  school: {
+    school_id: number;
+    school_name: string;
+    best_score: number | null;
+    avg_score: number | null;
+    province: string;
+    created_at: string;
+    no_teams: number;
+  } | null;
+  coaches: Array<{
+    coach_id: number;
+    first_name: string;
+    surname: string;
+    email: string;
+    phone_no: string;
+    date_of_birth: string;
+    created_at: string;
+  }>;
+  students: Array<{
+    student_id: number;
+    first_name: string;
+    surname: string;
+    date_of_birth: string;
+    grade: number | null;
+    role: string | null;
+    shirt_size: string | null;
+    dietary: string | null;
+  }>;
+  documents: Array<{
+    document_id: number;
+    name: string;
+    type: string;
+  }>;
+  eventTeams: Array<{
+    event_team_id: number;
+    event_id: number;
+    total_points_created_at: string | null;
+  }>;
+}
+
+export async function fetchTeamWithDetails(id: number): Promise<TeamWithDetails> {
+  const res = await fetch(`${API_BASE}/api/teams/${id}/details`, { headers: authHeaders() });
   return handleResponse(res);
 }

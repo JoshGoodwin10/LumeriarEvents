@@ -16,9 +16,9 @@ router.get("/", async (req, res) => {
     let query = "SELECT * FROM Team WHERE 1=1";
     const params = [];
 
-    if (school_id) { query += " AND school_id = ?";  params.push(school_id); }
-    if (category)  { query += " AND category = ?";   params.push(category); }
-    if (year)      { query += " AND year = ?";        params.push(year); }
+    if (school_id) { query += " AND school_id = ?"; params.push(school_id); }
+    if (category) { query += " AND category = ?"; params.push(category); }
+    if (year) { query += " AND year = ?"; params.push(year); }
     if (search) {
       query += " AND (team_name LIKE ? OR theme LIKE ? OR project_description LIKE ?)";
       const like = `%${search}%`;
@@ -46,7 +46,7 @@ router.get("/filter-options", async (req, res) => {
     ]);
     res.json({
       categories: categories.map(r => r.category),
-      years:      years.map(r => r.year),
+      years: years.map(r => r.year),
       school_ids: schools.map(r => r.school_id),
     });
   } catch (err) {
@@ -111,6 +111,61 @@ router.delete("/:id", async (req, res) => {
   } catch (err) {
     console.error("DELETE /teams/:id error:", err);
     res.status(500).json({ message: "Failed to delete team." });
+  }
+});
+
+// ─── GET /api/teams/:id/details ──────────────────────────────
+// Returns team + school + coaches + students + documents + event_teams
+router.get("/:id/details", async (req, res) => {
+  const teamId = req.params.id;
+
+  try {
+    // 1. Team
+    const [teamRows] = await db.execute("SELECT * FROM Team WHERE team_id = ?", [teamId]);
+    if (teamRows.length === 0) {
+      return res.status(404).json({ message: "Team not found." });
+    }
+    const team = teamRows[0];
+
+    // 2. School (if school_id exists)
+    let school = null;
+    if (team.school_id) {
+      const [schoolRows] = await db.execute("SELECT * FROM School WHERE school_id = ?", [team.school_id]);
+      if (schoolRows.length) school = schoolRows[0];
+    }
+
+    // 3. Coaches
+    const [coaches] = await db.execute("SELECT * FROM Coach WHERE team_id = ?", [teamId]);
+
+    // 4. Students (the field is "team_id" – your schema shows "date_of_birth_team_id", adjust if needed)
+    const [students] = await db.execute(
+      "SELECT student_id, first_name, surname, date_of_birth, grade, role, shirt_size, dietary_requirements FROM Student WHERE team_id = ?",
+      [teamId]
+    );
+
+    // 5. Documents
+    const [documents] = await db.execute(
+      "SELECT document_id, name, type FROM Document WHERE team_id = ?",
+      [teamId]
+    );
+
+    // 6. Event Teams
+    const [eventTeams] = await db.execute(
+      "SELECT event_team_id, event_id, total_points, created_at FROM Event_Team WHERE team_id = ?",
+      [teamId]
+    );
+
+    res.json({
+      team,
+      school,
+      coaches,
+      students,
+      documents,
+      eventTeams,
+    });
+  } catch (err) {
+    console.error("GET /teams/:id/details error:", err);
+    res.status(500).json({ message: "Failed to fetch team details." });
   }
 });
 

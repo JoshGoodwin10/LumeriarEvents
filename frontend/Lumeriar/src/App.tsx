@@ -7,6 +7,7 @@ import { AuthProvider } from './context/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
 import Dashboard from './pages/Dashboard';
 import TeamsDashboard from './pages/TeamsDashboard';
+import TeamDetail from './pages/TeamDetail';
 
 const HomePage = () => (
   <>
@@ -86,7 +87,7 @@ function App() {
             {/* <Route path="/profile"   element={<Profile />} /> */}
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/teams" element={<TeamsDashboard />} />
-
+            <Route path="/teams/:id" element={<TeamDetail />} />
             {/* Catch-all */}
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Route>
