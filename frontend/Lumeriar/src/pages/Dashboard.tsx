@@ -1,53 +1,59 @@
 import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import TeamsDashboard from "./TeamsDashboard";
+import SchoolsDashboard from "./SchoolsDashboard";
+import StudentsDashboard from "./StudentsDashboard";
+import CoachesDashboard from "./CoachesDashboard";
+import EventsDashboard from "./EventsDashboard";
+import JudgesDashboard from "./JudgesDashboard";
+import RequestsDashboard from "./RequestsDashboard";
 
 // ─── Types ────────────────────────────────────────────────────
-type School   = { id: string; name: string; district: string; status: string };
-type Student  = { id: string; firstName: string; lastName: string; grade: string; team: string };
-type Coach    = { id: string; firstName: string; lastName: string; school: string; email: string };
-type Event    = { id: string; title: string; date: string; location: string; status: string };
-type Judge    = { id: string; firstName: string; lastName: string; expertise: string; assignedTo: string };
-type Request  = { id: string; requestType: string; submittedBy: string; status: string; notes: string };
+type School = { id: string; name: string; district: string; status: string };
+type Student = { id: string; firstName: string; lastName: string; grade: string; team: string };
+type Coach = { id: string; firstName: string; lastName: string; school: string; email: string };
+type Event = { id: string; title: string; date: string; location: string; status: string };
+type Judge = { id: string; firstName: string; lastName: string; expertise: string; assignedTo: string };
+type Request = { id: string; requestType: string; submittedBy: string; status: string; notes: string };
 
 type SectionKey = "Overview" | "Teams" | "Schools" | "Students" | "Coaches" | "Events" | "Judges" | "Requests";
 
 // ─── Seed data ────────────────────────────────────────────────
 const seedSchools: School[] = [
-  { id: "s1", name: "Lincoln High",  district: "North", status: "Active"  },
-  { id: "s2", name: "Sunrise Prep",  district: "East",  status: "Pending" },
+  { id: "s1", name: "Lincoln High", district: "North", status: "Active" },
+  { id: "s2", name: "Sunrise Prep", district: "East", status: "Pending" },
 ];
 const seedStudents: Student[] = [
-  { id: "st1", firstName: "Ava",  lastName: "Morgan", grade: "10", team: "Photon Flyers"    },
-  { id: "st2", firstName: "Noah", lastName: "Lee",    grade: "11", team: "Circuit Breakers" },
+  { id: "st1", firstName: "Ava", lastName: "Morgan", grade: "10", team: "Photon Flyers" },
+  { id: "st2", firstName: "Noah", lastName: "Lee", grade: "11", team: "Circuit Breakers" },
 ];
 const seedCoaches: Coach[] = [
-  { id: "c1", firstName: "Mia",  lastName: "Chen",   school: "Lincoln High", email: "mia.chen@example.com"   },
+  { id: "c1", firstName: "Mia", lastName: "Chen", school: "Lincoln High", email: "mia.chen@example.com" },
   { id: "c2", firstName: "Liam", lastName: "Garcia", school: "Sunrise Prep", email: "liam.garcia@example.com" },
 ];
 const seedEvents: Event[] = [
-  { id: "e1", title: "Regional Qualifier",  date: "2026-05-15", location: "Convention Center", status: "Scheduled" },
-  { id: "e2", title: "Final Championship",  date: "2026-06-20", location: "City Arena",        status: "Planning"  },
+  { id: "e1", title: "Regional Qualifier", date: "2026-05-15", location: "Convention Center", status: "Scheduled" },
+  { id: "e2", title: "Final Championship", date: "2026-06-20", location: "City Arena", status: "Planning" },
 ];
 const seedJudges: Judge[] = [
-  { id: "j1", firstName: "Sophia", lastName: "Adams", expertise: "Robotics",  assignedTo: "Photon Flyers"    },
-  { id: "j2", firstName: "Ethan",  lastName: "Baker", expertise: "Software",  assignedTo: "Circuit Breakers" },
+  { id: "j1", firstName: "Sophia", lastName: "Adams", expertise: "Robotics", assignedTo: "Photon Flyers" },
+  { id: "j2", firstName: "Ethan", lastName: "Baker", expertise: "Software", assignedTo: "Circuit Breakers" },
 ];
 const seedRequests: Request[] = [
-  { id: "r1", requestType: "Team Registration", submittedBy: "Sunrise Prep",  status: "Pending",  notes: "Need fast approval"  },
-  { id: "r2", requestType: "Event Change",       submittedBy: "Lincoln High",  status: "Reviewed", notes: "Schedule conflict"   },
+  { id: "r1", requestType: "Team Registration", submittedBy: "Sunrise Prep", status: "Pending", notes: "Need fast approval" },
+  { id: "r2", requestType: "Event Change", submittedBy: "Lincoln High", status: "Reviewed", notes: "Schedule conflict" },
 ];
 
 // ─── Nav items ────────────────────────────────────────────────
 const NAV_SECTIONS: { key: SectionKey; label: string; icon: React.ReactNode }[] = [
-  { key: "Overview",  label: "Overview",  icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> },
-  { key: "Teams",     label: "Teams",     icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
-  { key: "Schools",   label: "Schools",   icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> },
-  { key: "Students",  label: "Students",  icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg> },
-  { key: "Coaches",   label: "Coaches",   icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> },
-  { key: "Events",    label: "Events",    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> },
-  { key: "Judges",    label: "Judges",    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> },
-  { key: "Requests",  label: "Requests",  icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> },
+  { key: "Overview", label: "Overview", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg> },
+  { key: "Teams", label: "Teams", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg> },
+  { key: "Schools", label: "Schools", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg> },
+  { key: "Students", label: "Students", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /></svg> },
+  { key: "Coaches", label: "Coaches", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg> },
+  { key: "Events", label: "Events", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg> },
+  { key: "Judges", label: "Judges", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg> },
+  { key: "Requests", label: "Requests", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></svg> },
 ];
 
 // ─── Reusable generic table ───────────────────────────────────
@@ -59,7 +65,7 @@ function GenericTable<T extends Record<string, any>>({
   onSave: (updated: T[]) => void;
   renderExtra?: (row: T) => React.ReactNode;
 }) {
-  const [editId, setEditId]     = useState<string | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
   const [editVals, setEditVals] = useState<Record<string, string>>({});
 
   const startEdit = (row: T) => { setEditId(row.id); setEditVals({ ...row }); };
@@ -92,16 +98,16 @@ function GenericTable<T extends Record<string, any>>({
                 {editId === row.id ? (
                   <>
                     <button className="btn-icon edit" onClick={saveEdit} title="Save">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>
                     </button>
                     <button className="btn-icon delete" onClick={cancelEdit} title="Cancel">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                     </button>
                   </>
                 ) : (
                   <>
                     <button className="btn-icon edit" onClick={() => startEdit(row)} title="Edit">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
                     </button>
                     {renderExtra?.(row)}
                   </>
@@ -135,7 +141,7 @@ function StudentsPanel() {
     <SectionShell title="Students" count={rows.length}>
       <GenericTable rows={rows} onSave={setRows} columns={[
         { key: "firstName", label: "First Name" }, { key: "lastName", label: "Last Name" },
-        { key: "grade", label: "Grade" },           { key: "team", label: "Team" },
+        { key: "grade", label: "Grade" }, { key: "team", label: "Team" },
       ]} />
     </SectionShell>
   );
@@ -147,7 +153,7 @@ function CoachesPanel() {
     <SectionShell title="Coaches" count={rows.length}>
       <GenericTable rows={rows} onSave={setRows} columns={[
         { key: "firstName", label: "First Name" }, { key: "lastName", label: "Last Name" },
-        { key: "school", label: "School" },         { key: "email", label: "Email" },
+        { key: "school", label: "School" }, { key: "email", label: "Email" },
       ]} />
     </SectionShell>
   );
@@ -171,7 +177,7 @@ function JudgesPanel() {
     <SectionShell title="Judges" count={rows.length}>
       <GenericTable rows={rows} onSave={setRows} columns={[
         { key: "firstName", label: "First Name" }, { key: "lastName", label: "Last Name" },
-        { key: "expertise", label: "Expertise" },   { key: "assignedTo", label: "Assigned To" },
+        { key: "expertise", label: "Expertise" }, { key: "assignedTo", label: "Assigned To" },
       ]} />
     </SectionShell>
   );
@@ -200,7 +206,7 @@ function RequestsPanel() {
                 <td className="td-muted">{r.notes}</td>
                 <td className="td-actions">
                   <button className="btn-approve" onClick={() => setStatus(r.id, "Approved")}>Approve</button>
-                  <button className="btn-deny"    onClick={() => setStatus(r.id, "Denied")}>Deny</button>
+                  <button className="btn-deny" onClick={() => setStatus(r.id, "Denied")}>Deny</button>
                 </td>
               </tr>
             ))}
@@ -214,13 +220,13 @@ function RequestsPanel() {
 // ─── Overview ─────────────────────────────────────────────────
 function OverviewPanel({ onNavigate }: { onNavigate: (s: SectionKey) => void }) {
   const metrics: { label: string; value: number; section: SectionKey; color: string }[] = [
-    { label: "Schools",   value: seedSchools.length,   section: "Schools",   color: "#3b82f6" },
-    { label: "Teams",     value: 0,                    section: "Teams",     color: "#6366f1" },
-    { label: "Students",  value: seedStudents.length,  section: "Students",  color: "#8b5cf6" },
-    { label: "Coaches",   value: seedCoaches.length,   section: "Coaches",   color: "#06b6d4" },
-    { label: "Events",    value: seedEvents.length,    section: "Events",    color: "#10b981" },
-    { label: "Judges",    value: seedJudges.length,    section: "Judges",    color: "#f59e0b" },
-    { label: "Requests",  value: seedRequests.filter(r => r.status === "Pending").length, section: "Requests", color: "#ef4444" },
+    { label: "Schools", value: seedSchools.length, section: "Schools", color: "#3b82f6" },
+    { label: "Teams", value: 0, section: "Teams", color: "#6366f1" },
+    { label: "Students", value: seedStudents.length, section: "Students", color: "#8b5cf6" },
+    { label: "Coaches", value: seedCoaches.length, section: "Coaches", color: "#06b6d4" },
+    { label: "Events", value: seedEvents.length, section: "Events", color: "#10b981" },
+    { label: "Judges", value: seedJudges.length, section: "Judges", color: "#f59e0b" },
+    { label: "Requests", value: seedRequests.filter(r => r.status === "Pending").length, section: "Requests", color: "#ef4444" },
   ];
 
   return (
@@ -295,14 +301,14 @@ const Dashboard: React.FC = () => {
 
   const renderContent = () => {
     switch (active) {
-      case "Overview":  return <OverviewPanel onNavigate={setActive} />;
-      case "Teams":     return <TeamsDashboard />;
-      case "Schools":   return <SchoolsPanel />;
-      case "Students":  return <StudentsPanel />;
-      case "Coaches":   return <CoachesPanel />;
-      case "Events":    return <EventsPanel />;
-      case "Judges":    return <JudgesPanel />;
-      case "Requests":  return <RequestsPanel />;
+      case "Overview": return <OverviewPanel onNavigate={setActive} />;
+      case "Teams": return <TeamsDashboard />;
+      case "Schools": return <SchoolsDashboard />;
+      //case "Students": return <StudentsDashboard />;
+      //case "Coaches": return <CoachesDashboard />;
+      //case "Events": return <EventsDashboard />;
+      //case "Judges": return <JudgesDashboard />;
+      //case "Requests": return <RequestsDashboard />;
     }
   };
 
@@ -314,8 +320,8 @@ const Dashboard: React.FC = () => {
           <div className="sidebar-brand">
             <div className="brand-icon">
               <svg width="18" height="18" viewBox="0 0 28 28" fill="none">
-                <path d="M14 2L26 8V20L14 26L2 20V8L14 2Z" stroke="currentColor" strokeWidth="2"/>
-                <path d="M14 8L20 11V17L14 20L8 17V11L14 8Z" fill="currentColor" opacity="0.5"/>
+                <path d="M14 2L26 8V20L14 26L2 20V8L14 2Z" stroke="currentColor" strokeWidth="2" />
+                <path d="M14 8L20 11V17L14 20L8 17V11L14 8Z" fill="currentColor" opacity="0.5" />
               </svg>
             </div>
             {!collapsed && <span className="brand-name">NEXUS</span>}
@@ -323,8 +329,8 @@ const Dashboard: React.FC = () => {
           <button className="collapse-btn" onClick={() => setCollapsed(c => !c)} title="Toggle sidebar">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               {collapsed
-                ? <polyline points="9 18 15 12 9 6"/>
-                : <polyline points="15 18 9 12 15 6"/>}
+                ? <polyline points="9 18 15 12 9 6" />
+                : <polyline points="15 18 9 12 15 6" />}
             </svg>
           </button>
         </div>
@@ -357,9 +363,9 @@ const Dashboard: React.FC = () => {
           )}
           <button className="logout-btn" onClick={logout} title="Sign out">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-              <polyline points="16 17 21 12 16 7"/>
-              <line x1="21" y1="12" x2="9" y2="12"/>
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
             </svg>
             {!collapsed && <span>Sign out</span>}
           </button>
