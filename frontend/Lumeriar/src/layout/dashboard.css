@@ -595,6 +595,17 @@
     text-decoration: underline;
 }
 
+/* Event link (for clickable event names) */
+.event-link {
+    color: #60a5fa;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.event-link:hover {
+    text-decoration: underline;
+}
+
 /* ── Modals (tdm- prefix) ── */
 .tdm-backdrop {
     position: fixed !important;

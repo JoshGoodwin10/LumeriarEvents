@@ -6,6 +6,10 @@ import StudentsDashboard from "./StudentsDashboard";
 
 // import dashboard css
 import "../layout/dashboard.css";
+import CoachesDashboard from "./CoachesDashboard";
+import EventsDashboard from "./EventsDashboard";
+import JudgesDashboard from "./JudgesDashboard";
+import RequestsDashboard from "./RequestsDashboard";
 
 // ─── Types ────────────────────────────────────────────────────
 type School = { id: string; name: string; district: string; status: string };
@@ -120,102 +124,6 @@ function GenericTable<T extends Record<string, any>>({
   );
 }
 
-// ─── Section panels ───────────────────────────────────────────
-function SchoolsPanel() {
-  const [rows, setRows] = useState<School[]>(seedSchools);
-  return (
-    <SectionShell title="Schools" count={rows.length}>
-      <GenericTable
-        rows={rows} onSave={setRows}
-        columns={[{ key: "name", label: "School Name" }, { key: "district", label: "District" }, { key: "status", label: "Status" }]}
-        renderExtra={row => <StatusBadge status={row.status} />}
-      />
-    </SectionShell>
-  );
-}
-
-function StudentsPanel() {
-  const [rows, setRows] = useState<Student[]>(seedStudents);
-  return (
-    <SectionShell title="Students" count={rows.length}>
-      <GenericTable rows={rows} onSave={setRows} columns={[
-        { key: "firstName", label: "First Name" }, { key: "lastName", label: "Last Name" },
-        { key: "grade", label: "Grade" }, { key: "team", label: "Team" },
-      ]} />
-    </SectionShell>
-  );
-}
-
-function CoachesPanel() {
-  const [rows, setRows] = useState<Coach[]>(seedCoaches);
-  return (
-    <SectionShell title="Coaches" count={rows.length}>
-      <GenericTable rows={rows} onSave={setRows} columns={[
-        { key: "firstName", label: "First Name" }, { key: "lastName", label: "Last Name" },
-        { key: "school", label: "School" }, { key: "email", label: "Email" },
-      ]} />
-    </SectionShell>
-  );
-}
-
-function EventsPanel() {
-  const [rows, setRows] = useState<Event[]>(seedEvents);
-  return (
-    <SectionShell title="Events" count={rows.length}>
-      <GenericTable rows={rows} onSave={setRows} columns={[
-        { key: "title", label: "Title" }, { key: "date", label: "Date" },
-        { key: "location", label: "Location" }, { key: "status", label: "Status" },
-      ]} />
-    </SectionShell>
-  );
-}
-
-function JudgesPanel() {
-  const [rows, setRows] = useState<Judge[]>(seedJudges);
-  return (
-    <SectionShell title="Judges" count={rows.length}>
-      <GenericTable rows={rows} onSave={setRows} columns={[
-        { key: "firstName", label: "First Name" }, { key: "lastName", label: "Last Name" },
-        { key: "expertise", label: "Expertise" }, { key: "assignedTo", label: "Assigned To" },
-      ]} />
-    </SectionShell>
-  );
-}
-
-function RequestsPanel() {
-  const [rows, setRows] = useState<Request[]>(seedRequests);
-  const setStatus = (id: string, status: string) =>
-    setRows(r => r.map(x => x.id === id ? { ...x, status } : x));
-
-  return (
-    <SectionShell title="Registration Requests" count={rows.length}>
-      <div className="gt-wrap">
-        <table className="gt-table">
-          <thead>
-            <tr>
-              <th>Type</th><th>Submitted By</th><th>Status</th><th>Notes</th><th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map(r => (
-              <tr key={r.id}>
-                <td>{r.requestType}</td>
-                <td>{r.submittedBy}</td>
-                <td><StatusBadge status={r.status} /></td>
-                <td className="td-muted">{r.notes}</td>
-                <td className="td-actions">
-                  <button className="btn-approve" onClick={() => setStatus(r.id, "Approved")}>Approve</button>
-                  <button className="btn-deny" onClick={() => setStatus(r.id, "Denied")}>Deny</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </SectionShell>
-  );
-}
-
 // ─── Overview ─────────────────────────────────────────────────
 function OverviewPanel({ onNavigate }: { onNavigate: (s: SectionKey) => void }) {
   const metrics: { label: string; value: number; section: SectionKey; color: string }[] = [
@@ -304,9 +212,9 @@ const Dashboard: React.FC = () => {
       case "Teams": return <TeamsDashboard />;
       case "Schools": return <SchoolsDashboard />;
       case "Students": return <StudentsDashboard />;
-      //case "Coaches": return <CoachesDashboard />;
-      //case "Events": return <EventsDashboard />;
-      //case "Judges": return <JudgesDashboard />;
+      case "Coaches": return <CoachesDashboard />;
+      case "Events": return <EventsDashboard />;
+      case "Judges": return <JudgesDashboard />;
       //case "Requests": return <RequestsDashboard />;
     }
   };

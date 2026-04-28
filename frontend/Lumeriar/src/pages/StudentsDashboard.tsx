@@ -1,6 +1,16 @@
 // StudentsDashboard.tsx
 import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
+import {
+    fetchStudents,
+    fetchStudentFilterOptions,
+    createStudent,
+    updateStudent,
+    deleteStudent,
+    type Student,
+    type StudentFilters,
+    type StudentFilterOptions,
+} from "../api/students";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
@@ -18,77 +28,6 @@ async function handleResponse(res: Response) {
     return data;
 }
 
-// ─── Types ────────────────────────────────────────────────────
-export interface Student {
-    student_id: number;
-    first_name: string;
-    surname: string;
-    date_of_birth: string | null;
-    team_id: number | null;
-    created_at: string;
-    grade: number | null;
-    role: string | null;
-    shirt_size: string | null;
-    dietary_requirements: string | null;
-    // joined from Team table (not stored in Student)
-    team_name?: string;
-}
-
-export interface StudentFilters {
-    search?: string;
-    team_id?: string;
-    grade?: string;
-    role?: string;
-}
-
-export interface StudentFilterOptions {
-    teams: { team_id: number; team_name: string }[];
-    grades: number[];
-    roles: string[];
-}
-
-// ─── API functions ────────────────────────────────────────────
-async function fetchStudents(filters: StudentFilters = {}): Promise<Student[]> {
-    const params = new URLSearchParams();
-    if (filters.search) params.set("search", filters.search);
-    if (filters.team_id) params.set("team_id", filters.team_id);
-    if (filters.grade) params.set("grade", filters.grade);
-    if (filters.role) params.set("role", filters.role);
-
-    const res = await fetch(`${API_BASE}/api/students?${params}`, { headers: authHeaders() });
-    return handleResponse(res);
-}
-
-async function fetchStudentFilterOptions(): Promise<StudentFilterOptions> {
-    const res = await fetch(`${API_BASE}/api/students/filter-options`, { headers: authHeaders() });
-    return handleResponse(res);
-}
-
-async function createStudent(data: Omit<Student, "student_id" | "created_at" | "team_name">) {
-    const res = await fetch(`${API_BASE}/api/students`, {
-        method: "POST",
-        headers: authHeaders(),
-        body: JSON.stringify(data),
-    });
-    return handleResponse(res);
-}
-
-async function updateStudent(id: number, data: Partial<Omit<Student, "student_id" | "created_at" | "team_name">>) {
-    const res = await fetch(`${API_BASE}/api/students/${id}`, {
-        method: "PUT",
-        headers: authHeaders(),
-        body: JSON.stringify(data),
-    });
-    return handleResponse(res);
-}
-
-async function deleteStudent(id: number) {
-    const res = await fetch(`${API_BASE}/api/students/${id}`, {
-        method: "DELETE",
-        headers: authHeaders(),
-    });
-    return handleResponse(res);
-}
 
 // ─── Empty form state ─────────────────────────────────────────
 const emptyForm = (): Omit<Student, "student_id" | "created_at" | "team_name"> => ({

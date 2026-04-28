@@ -8,6 +8,11 @@ import PrivateRoute from './components/PrivateRoute';
 import Dashboard from './pages/Dashboard';
 import TeamsDashboard from './pages/TeamsDashboard';
 import TeamDetail from './pages/TeamDetail';
+import CoachesDashboard from './pages/CoachesDashboard';
+import SchoolsDashboard from './pages/SchoolsDashboard';
+import StudentDashboard from './pages/StudentsDashboard';
+import EventsDashboard from './pages/EventsDashboard';
+import JudgesDashboard from './pages/JudgesDashboard';
 
 const HomePage = () => (
   <>
@@ -87,6 +92,11 @@ function App() {
             {/* <Route path="/profile"   element={<Profile />} /> */}
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/teams" element={<TeamsDashboard />} />
+            <Route path="/school" element={<SchoolsDashboard />} />
+            <Route path="/students" element={<StudentDashboard />} />
+            <Route path="/coaches" element={<CoachesDashboard />} />
+            <Route path="/events" element={<EventsDashboard />} />
+            <Route path="/judges" element={<JudgesDashboard />} />
             <Route path="/teams/:id" element={<TeamDetail />} />
             {/* Catch-all */}
             <Route path="*" element={<Navigate to="/login" replace />} />
