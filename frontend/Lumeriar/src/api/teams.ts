@@ -19,6 +19,7 @@ export interface Team {
   team_name: string;
   category: string | null;
   school_id: number | null;
+  school_name?: string | null; // Optional, included when fetching teams with school details
   year: number | null;
   theme: string | null;
   project_description: string | null;

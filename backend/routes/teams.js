@@ -13,19 +13,34 @@ router.get("/", async (req, res) => {
   try {
     const { school_id, category, year, search } = req.query;
 
-    let query = "SELECT * FROM Team WHERE 1=1";
+    // Join with School to get school_name
+    let query = `
+      SELECT Team.*, School.school_name
+      FROM Team
+      LEFT JOIN School ON Team.school_id = School.school_id
+      WHERE 1=1
+    `;
     const params = [];
 
-    if (school_id) { query += " AND school_id = ?"; params.push(school_id); }
-    if (category) { query += " AND category = ?"; params.push(category); }
-    if (year) { query += " AND year = ?"; params.push(year); }
+    if (school_id) {
+      query += " AND Team.school_id = ?";
+      params.push(school_id);
+    }
+    if (category) {
+      query += " AND Team.category = ?";
+      params.push(category);
+    }
+    if (year) {
+      query += " AND Team.year = ?";
+      params.push(year);
+    }
     if (search) {
-      query += " AND (team_name LIKE ? OR theme LIKE ? OR project_description LIKE ?)";
+      query += " AND (Team.team_name LIKE ? OR Team.theme LIKE ? OR Team.project_description LIKE ?)";
       const like = `%${search}%`;
       params.push(like, like, like);
     }
 
-    query += " ORDER BY created_at DESC";
+    query += " ORDER BY Team.created_at DESC";
 
     const [rows] = await db.execute(query, params);
     res.json(rows);

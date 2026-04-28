@@ -50,3 +50,11 @@ function authHeaders(): HeadersInit | undefined {
 function handleResponse(res: Response): School[] | PromiseLike<School[]> {
     throw new Error("Function not implemented.");
 }
+
+// api/schools.ts or add to teams.ts
+export async function fetchSchoolsList(): Promise<{ school_id: number; school_name: string }[]> {
+    const res = await fetch(`${API_BASE}/api/schools`, { headers: authHeaders() });
+    const data = await handleResponse(res);
+    // return only id and name
+    return data.map((s: any) => ({ school_id: s.school_id, school_name: s.school_name }));
+}
