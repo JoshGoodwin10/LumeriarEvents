@@ -1,7 +1,7 @@
-const express  = require("express");
-const bcrypt   = require("bcryptjs");
-const jwt      = require("jsonwebtoken");
-const db       = require("../db");
+const express = require("express");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const db = require("../db");
 const authMiddleware = require("../middleware/auth");
 
 const router = express.Router();
@@ -41,7 +41,7 @@ router.post("/login", async (req, res) => {
     // 3. Sign JWT
     const token = jwt.sign(
       {
-        LoginID:       user.LoginID,
+        LoginID: user.LoginID,
         email_address: user.email_address,
       },
       process.env.JWT_SECRET,
@@ -52,9 +52,9 @@ router.post("/login", async (req, res) => {
     return res.json({
       token,
       user: {
-        LoginID:       user.LoginID,
+        LoginID: user.LoginID,
         email_address: user.email_address,
-        created_at:    user.created_at,
+        created_at: user.created_at,
       },
     });
 

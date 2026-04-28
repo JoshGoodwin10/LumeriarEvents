@@ -13,6 +13,7 @@ import SchoolsDashboard from './pages/SchoolsDashboard';
 import StudentDashboard from './pages/StudentsDashboard';
 import EventsDashboard from './pages/EventsDashboard';
 import JudgesDashboard from './pages/JudgesDashboard';
+import EventDetail from './pages/EventDetail';
 
 const HomePage = () => (
   <>
@@ -80,16 +81,14 @@ function App() {
     <AuthProvider>
       <Layout>
         <Routes>
+          {/* Public routes */}
           <Route path="/" element={<HomePage />} />
           <Route path="/index.html" element={<HomePage />} />
           <Route path="/pages/index.html" element={<HomePage />} />
           <Route path="/login" element={<Login />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
 
-          {/* Private routes — add as many as you need inside here */}
+          {/* Private routes (all require authentication) */}
           <Route element={<PrivateRoute />}>
-            {/* <Route path="/dashboard" element={<Dashboard />} /> */}
-            {/* <Route path="/profile"   element={<Profile />} /> */}
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/teams" element={<TeamsDashboard />} />
             <Route path="/school" element={<SchoolsDashboard />} />
@@ -98,13 +97,17 @@ function App() {
             <Route path="/events" element={<EventsDashboard />} />
             <Route path="/judges" element={<JudgesDashboard />} />
             <Route path="/teams/:id" element={<TeamDetail />} />
-            {/* Catch-all */}
-            <Route path="*" element={<Navigate to="/login" replace />} />
+            <Route path="/events/:id" element={<EventDetail />} />
+            {/* Catch‑all inside private area: redirect to dashboard */}
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>
+
+          {/* Optional: catch‑all for non‑private routes (e.g., 404 page) */}
+          {/* If you want a 404 for public visitors, add it here (without redirecting to root) */}
         </Routes>
       </Layout>
     </AuthProvider>
-  )
+  );
 }
 
 export default App

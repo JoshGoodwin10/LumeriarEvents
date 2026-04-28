@@ -15,13 +15,14 @@ async function handleResponse(res: Response) {
     return data;
 }
 
+// ─── Types ─────────────────────────────────────────────────────
 export interface Event {
-    team_count: number;
     event_id: number;
     name: string;
-    date: string;          // ISO date string (YYYY-MM-DD)
-    category: string;
+    date: string;
+    category: string | null;
     created_at: string;
+    team_count?: number; // optional, used in list view
 }
 
 export interface EventFilters {
@@ -33,6 +34,34 @@ export interface EventFilterOptions {
     categories: string[];
 }
 
+export interface TeamInEvent {
+    event_team_id: number;
+    team_id: number;
+    team_name: string;
+    category: string;
+    total_points: number | null;
+    joined_at: string;
+    judges: {
+        judge_id: number;
+        first_name: string;
+        surname: string;
+        email: string;
+        role: string;
+    }[];
+}
+
+export interface EventDetails {
+    event: {
+        event_id: number;
+        name: string;
+        date: string;
+        category: string | null;
+        created_at: string;
+    };
+    teams: TeamInEvent[];
+}
+
+// ─── Event CRUD (already existing) ───────────────────────────
 export async function fetchEvents(filters: EventFilters = {}): Promise<Event[]> {
     const params = new URLSearchParams();
     if (filters.search) params.set("search", filters.search);
@@ -73,4 +102,26 @@ export async function deleteEvent(id: number) {
     return handleResponse(res);
 }
 
+// ─── New: Event Details & Judge Assignment ────────────────────
+export async function fetchEventDetails(id: number): Promise<EventDetails> {
+    const res = await fetch(`${API_BASE}/api/events/${id}/details`, { headers: authHeaders() });
+    return handleResponse(res);
+}
 
+export async function assignJudgeToTeam(eventId: number, teamId: number, judgeId: number) {
+    const res = await fetch(`${API_BASE}/api/events/${eventId}/assign-judge`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({ team_id: teamId, judge_id: judgeId }),
+    });
+    return handleResponse(res);
+}
+
+export async function removeJudgeFromTeam(eventId: number, teamId: number, judgeId: number) {
+    const res = await fetch(`${API_BASE}/api/events/${eventId}/remove-judge`, {
+        method: "DELETE",
+        headers: authHeaders(),
+        body: JSON.stringify({ team_id: teamId, judge_id: judgeId }),
+    });
+    return handleResponse(res);
+}

@@ -184,7 +184,7 @@ function HistoryModal({ scoreId, onClose }: { scoreId: number; onClose: () => vo
 // ─── Main Component ───────────────────────────────────────────
 export default function EventDetail() {
     const { id } = useParams<{ id: string }>();
-    const [event, setEvent] = useState<{ name: string; date: string; category: string } | null>(null);
+    const [event, setEvent] = useState<{ name: string; date: string; category: string | null } | null>(null);
     const [teams, setTeams] = useState<TeamInEvent[]>([]);
     const [allJudges, setAllJudges] = useState<Judge[]>([]);
     const [scores, setScores] = useState<Score[]>([]);
@@ -283,10 +283,17 @@ export default function EventDetail() {
                                 <td>{team.category}</td>
                                 <td className="td-points"><strong>{team.total_points ?? 0}</strong></td>
                                 <td>
-                                    {(team.judges || []).map((j: { judge_id: Key | null | undefined; first_name: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined; surname: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined; }) => (
+                                    {(team.judges || []).map((j) => (
                                         <span key={j.judge_id} className="judge-badge">
                                             {j.first_name} {j.surname}
-                                            <button onClick={() => handleRemoveJudge(team.team_id, j.judge_id)} className="remove-judge">×</button>
+                                            <button
+                                                onClick={() =>
+                                                    typeof j.judge_id === "number" && handleRemoveJudge(team.team_id, j.judge_id)
+                                                }
+                                                className="remove-judge"
+                                            >
+                                                ×
+                                            </button>
                                         </span>
                                     ))}
                                 </td>
