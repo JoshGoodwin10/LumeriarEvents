@@ -17,7 +17,7 @@ import "../layout/dashboard.css";
 const emptyForm = (): Omit<Judge, "judge_id" | "created_at" | "school_name"> => ({
     first_name: "",
     surname: "",
-    school_id: 0,
+    school_id: null,
     email: "",
     phone_no: "",
     date_of_birth: "",
@@ -59,11 +59,11 @@ function JudgeModal({ judge, onClose, onSaved }: {
             const payload = {
                 first_name: form.first_name,
                 surname: form.surname,
-                school_id: form.school_id ? Number(form.school_id) : 0,
-                email: form.email || "",
-                phone_no: form.phone_no || "",
-                date_of_birth: form.date_of_birth || "",
-                role: form.role || "",
+                school_id: form.school_id ? Number(form.school_id) : null,
+                email: form.email,
+                phone_no: form.phone_no,
+                date_of_birth: form.date_of_birth,
+                role: form.role,
             };
             if (isEdit) await updateJudge(judge.judge_id, payload);
             else await createJudge(payload);
@@ -110,7 +110,12 @@ function JudgeModal({ judge, onClose, onSaved }: {
                         </div>
                         <div className="tdm-field">
                             <label className="tdm-label">Role</label>
-                            <input className="tdm-input" value={form.role ?? ""} onChange={e => set("role", e.target.value)} placeholder="Head Judge" />
+                            <select className="tdm-input" value={form.role ?? ""} onChange={e => set("role", e.target.value)}>
+                                <option value="">-- Select Role --</option>
+                                <option value="Senior Judge">Senior Judge</option>
+                                <option value="Junior Judge">Junior Judge</option>
+                                <option value="Lead Judge">Lead Judge</option>
+                            </select>
                         </div>
                     </div>
                     <div className="tdm-field">

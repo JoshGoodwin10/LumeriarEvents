@@ -19,14 +19,14 @@ export interface Judge {
     judge_id: number;
     first_name: string;
     surname: string;
-    school_id: number;
+    school_id: number | null;
     email: string;
     phone_no: string;
     date_of_birth: string;
     role: string;
     created_at: string;
     // joined fields
-    school_name?: string;
+    school_name?: string | null;
 }
 
 export interface JudgeFilters {
