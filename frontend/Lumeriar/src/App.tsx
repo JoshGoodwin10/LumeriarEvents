@@ -14,6 +14,7 @@ import StudentDashboard from './pages/StudentsDashboard';
 import EventsDashboard from './pages/EventsDashboard';
 import JudgesDashboard from './pages/JudgesDashboard';
 import EventDetail from './pages/EventDetail';
+import RequestsDashboard from './pages/RequestsDashboard';
 
 const HomePage = () => (
   <>
@@ -96,6 +97,7 @@ function App() {
             <Route path="/coaches" element={<CoachesDashboard />} />
             <Route path="/events" element={<EventsDashboard />} />
             <Route path="/judges" element={<JudgesDashboard />} />
+            <Route path="/requests" element={<RequestsDashboard />} />
             <Route path="/teams/:id" element={<TeamDetail />} />
             <Route path="/events/:id" element={<EventDetail />} />
             {/* Catch‑all inside private area: redirect to dashboard */}
