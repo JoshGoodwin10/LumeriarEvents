@@ -2,13 +2,13 @@
 import { useState, useEffect, type JSXElementConstructor, type Key, type ReactElement, type ReactNode, type ReactPortal } from "react";
 import { useParams, Link } from "react-router-dom";
 import { createPortal } from "react-dom";
-import { fetchJudges, type Judge } from "../api/judges";
+import { fetchJudges, type Judge } from "../../api/judges";
 import {
     fetchEventDetails,
     assignJudgeToTeam,
     removeJudgeFromTeam,
     type TeamInEvent,
-} from "../api/events";
+} from "../../api/events";
 import {
     fetchEventScores,
     saveScore,
@@ -16,7 +16,7 @@ import {
     fetchScoreHistory,
     type Score,
     type ScoreHistory,
-} from "../api/scores";
+} from "../../api/scores";
 
 // ─── Score Edit Modal ─────────────────────────────────────────
 function ScoreModal({

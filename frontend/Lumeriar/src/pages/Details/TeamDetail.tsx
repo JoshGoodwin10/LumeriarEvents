@@ -1,7 +1,7 @@
 // src/pages/TeamDetail.tsx
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { fetchTeamWithDetails, type TeamWithDetails } from '../api/teams';
+import { fetchTeamWithDetails, type TeamWithDetails } from '../../api/teams';
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
 

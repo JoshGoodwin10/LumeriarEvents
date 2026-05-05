@@ -7,13 +7,13 @@ import { AuthProvider } from './context/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
 import Dashboard from './pages/Dashboards/Dashboard';
 import TeamsDashboard from './pages/Dashboards/TeamsDashboard';
-import TeamDetail from './pages/TeamDetail';
+import TeamDetail from './pages/Details/TeamDetail';
 import CoachesDashboard from './pages/Dashboards/CoachesDashboard';
 import SchoolsDashboard from './pages/Dashboards/SchoolsDashboard';
 import StudentDashboard from './pages/Dashboards/StudentsDashboard';
 import EventsDashboard from './pages/Dashboards/EventsDashboard';
 import JudgesDashboard from './pages/Dashboards/JudgesDashboard';
-import EventDetail from './pages/EventDetail';
+import EventDetail from './pages/Details/EventDetail';
 import RequestsDashboard from './pages/Dashboards/RequestsDashboard';
 
 const HomePage = () => (
