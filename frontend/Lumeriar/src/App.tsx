@@ -5,16 +5,16 @@ import Login from './pages/Login'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { AuthProvider } from './context/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
-import Dashboard from './pages/Dashboard';
-import TeamsDashboard from './pages/TeamsDashboard';
+import Dashboard from './pages/Dashboards/Dashboard';
+import TeamsDashboard from './pages/Dashboards/TeamsDashboard';
 import TeamDetail from './pages/TeamDetail';
-import CoachesDashboard from './pages/CoachesDashboard';
-import SchoolsDashboard from './pages/SchoolsDashboard';
-import StudentDashboard from './pages/StudentsDashboard';
-import EventsDashboard from './pages/EventsDashboard';
-import JudgesDashboard from './pages/JudgesDashboard';
+import CoachesDashboard from './pages/Dashboards/CoachesDashboard';
+import SchoolsDashboard from './pages/Dashboards/SchoolsDashboard';
+import StudentDashboard from './pages/Dashboards/StudentsDashboard';
+import EventsDashboard from './pages/Dashboards/EventsDashboard';
+import JudgesDashboard from './pages/Dashboards/JudgesDashboard';
 import EventDetail from './pages/EventDetail';
-import RequestsDashboard from './pages/RequestsDashboard';
+import RequestsDashboard from './pages/Dashboards/RequestsDashboard';
 
 const HomePage = () => (
   <>

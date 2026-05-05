@@ -1,19 +1,21 @@
 const express = require("express");
+const multer = require("multer");
 const db = require("../db");
 const authMiddleware = require("../middleware/auth");
 
 const router = express.Router();
 
-// All team routes are protected — user must be logged in
+// Multer configuration – store files in memory (as Buffer)
+const upload = multer({ storage: multer.memoryStorage() });
+
+// All team routes are protected – user must be logged in
 router.use(authMiddleware);
 
 // ─── GET /api/teams ──────────────────────────────────────────
-// Fetch all teams with optional filters: ?school_id=1&category=Advanced&year=2024&search=robot
 router.get("/", async (req, res) => {
   try {
-    const { school_id, category, year, search } = req.query;
+    const { school_id, category, search } = req.query;
 
-    // Join with School to get school_name
     let query = `
       SELECT Team.*, School.school_name
       FROM Team
@@ -29,10 +31,6 @@ router.get("/", async (req, res) => {
     if (category) {
       query += " AND Team.category = ?";
       params.push(category);
-    }
-    if (year) {
-      query += " AND Team.year = ?";
-      params.push(year);
     }
     if (search) {
       query += " AND (Team.team_name LIKE ? OR Team.theme LIKE ? OR Team.project_description LIKE ?)";
@@ -51,17 +49,14 @@ router.get("/", async (req, res) => {
 });
 
 // ─── GET /api/teams/filter-options ──────────────────────────
-// Returns unique values to populate the filter dropdowns
 router.get("/filter-options", async (req, res) => {
   try {
-    const [[categories], [years], [schools]] = await Promise.all([
+    const [[categories], [schools]] = await Promise.all([
       db.execute("SELECT DISTINCT category FROM Team WHERE category IS NOT NULL ORDER BY category"),
-      db.execute("SELECT DISTINCT year FROM Team WHERE year IS NOT NULL ORDER BY year DESC"),
       db.execute("SELECT DISTINCT school_id FROM Team WHERE school_id IS NOT NULL ORDER BY school_id"),
     ]);
     res.json({
       categories: categories.map(r => r.category),
-      years: years.map(r => r.year),
       school_ids: schools.map(r => r.school_id),
     });
   } catch (err) {
@@ -82,16 +77,39 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// ─── POST /api/teams ─────────────────────────────────────────
-router.post("/", async (req, res) => {
-  const { team_name, category, school_id, year, theme, project_description } = req.body;
+// ─── POST /api/teams (with file uploads) ─────────────────────
+router.post("/", upload.fields([
+  { name: "material_bill", maxCount: 1 },
+  { name: "engineering_plan", maxCount: 1 },
+  { name: "project_report", maxCount: 1 },
+  { name: "engineering_journal", maxCount: 1 }
+]), async (req, res) => {
+  const {
+    team_name, category, school_id, theme, province,
+    event, project_description, how_heard
+  } = req.body;
+
   if (!team_name) return res.status(400).json({ message: "team_name is required." });
+
+  // Extract files (as Buffers) – if no file, store null
+  const material_bill = req.files["material_bill"] ? req.files["material_bill"][0].buffer : null;
+  const engineering_plan = req.files["engineering_plan"] ? req.files["engineering_plan"][0].buffer : null;
+  const project_report = req.files["project_report"] ? req.files["project_report"][0].buffer : null;
+  const engineering_journal = req.files["engineering_journal"] ? req.files["engineering_journal"][0].buffer : null;
 
   try {
     const [result] = await db.execute(
-      `INSERT INTO Team (team_name, category, school_id, year, theme, project_description)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [team_name, category ?? null, school_id ?? null, year ?? null, theme ?? null, project_description ?? null]
+      `INSERT INTO Team (
+        team_name, category, school_id, theme, province, event,
+        project_description, how_heard,
+        material_bill, engineering_plan, project_report, engineering_journal
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        team_name, category || null, school_id || null, theme || null,
+        province || null, event || null, project_description || null,
+        how_heard || null,
+        material_bill, engineering_plan, project_report, engineering_journal
+      ]
     );
     res.status(201).json({ message: "Team created.", team_id: result.insertId });
   } catch (err) {
@@ -100,16 +118,60 @@ router.post("/", async (req, res) => {
   }
 });
 
-// ─── PUT /api/teams/:id ──────────────────────────────────────
-router.put("/:id", async (req, res) => {
-  const { team_name, category, school_id, year, theme, project_description } = req.body;
+// ─── PUT /api/teams/:id (with optional file updates) ─────────
+router.put("/:id", upload.fields([
+  { name: "material_bill", maxCount: 1 },
+  { name: "engineering_plan", maxCount: 1 },
+  { name: "project_report", maxCount: 1 },
+  { name: "engineering_journal", maxCount: 1 }
+]), async (req, res) => {
+  const {
+    team_name, category, school_id, theme, province,
+    event, project_description, how_heard
+  } = req.body;
+  const teamId = req.params.id;
+
   try {
-    const [result] = await db.execute(
-      `UPDATE Team SET team_name=?, category=?, school_id=?, year=?, theme=?, project_description=?
-       WHERE team_id=?`,
-      [team_name, category ?? null, school_id ?? null, year ?? null, theme ?? null, project_description ?? null, req.params.id]
-    );
-    if (result.affectedRows === 0) return res.status(404).json({ message: "Team not found." });
+    // First, fetch existing team to check existence
+    const [existing] = await db.execute("SELECT * FROM Team WHERE team_id = ?", [teamId]);
+    if (existing.length === 0) return res.status(404).json({ message: "Team not found." });
+
+    // Prepare update fields dynamically: only replace file if a new one is uploaded
+    const updates = [];
+    const values = [];
+
+    // Text fields (always update)
+    updates.push("team_name = ?"); values.push(team_name);
+    updates.push("category = ?"); values.push(category || null);
+    updates.push("school_id = ?"); values.push(school_id || null);
+    updates.push("theme = ?"); values.push(theme || null);
+    updates.push("province = ?"); values.push(province || null);
+    updates.push("event = ?"); values.push(event || null);
+    updates.push("project_description = ?"); values.push(project_description || null);
+    updates.push("how_heard = ?"); values.push(how_heard || null);
+
+    // File fields: only update if a new file was provided
+    if (req.files["material_bill"]) {
+      updates.push("material_bill = ?");
+      values.push(req.files["material_bill"][0].buffer);
+    }
+    if (req.files["engineering_plan"]) {
+      updates.push("engineering_plan = ?");
+      values.push(req.files["engineering_plan"][0].buffer);
+    }
+    if (req.files["project_report"]) {
+      updates.push("project_report = ?");
+      values.push(req.files["project_report"][0].buffer);
+    }
+    if (req.files["engineering_journal"]) {
+      updates.push("engineering_journal = ?");
+      values.push(req.files["engineering_journal"][0].buffer);
+    }
+
+    values.push(teamId);
+    const query = `UPDATE Team SET ${updates.join(", ")} WHERE team_id = ?`;
+    await db.execute(query, values);
+
     res.json({ message: "Team updated." });
   } catch (err) {
     console.error("PUT /teams/:id error:", err);
@@ -120,7 +182,7 @@ router.put("/:id", async (req, res) => {
 // ─── DELETE /api/teams/:id ───────────────────────────────────
 router.delete("/:id", async (req, res) => {
   try {
-    const [result] = await db.execute("DELETE FROM Team WHERE team_id=?", [req.params.id]);
+    const [result] = await db.execute("DELETE FROM Team WHERE team_id = ?", [req.params.id]);
     if (result.affectedRows === 0) return res.status(404).json({ message: "Team not found." });
     res.json({ message: "Team deleted." });
   } catch (err) {
@@ -129,59 +191,60 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-// ─── GET /api/teams/:id/details ──────────────────────────────
-// Returns team + school + coaches + students + documents + event_teams
+// ─── GET /api/teams/:id/details (unchanged) ──────────────────
 router.get("/:id/details", async (req, res) => {
   const teamId = req.params.id;
 
   try {
-    // 1. Team
     const [teamRows] = await db.execute("SELECT * FROM Team WHERE team_id = ?", [teamId]);
-    if (teamRows.length === 0) {
-      return res.status(404).json({ message: "Team not found." });
-    }
+    if (teamRows.length === 0) return res.status(404).json({ message: "Team not found." });
     const team = teamRows[0];
 
-    // 2. School (if school_id exists)
     let school = null;
     if (team.school_id) {
       const [schoolRows] = await db.execute("SELECT * FROM School WHERE school_id = ?", [team.school_id]);
       if (schoolRows.length) school = schoolRows[0];
     }
 
-    // 3. Coaches
     const [coaches] = await db.execute("SELECT * FROM Coach WHERE team_id = ?", [teamId]);
-
-    // 4. Students (the field is "team_id" – your schema shows "date_of_birth_team_id", adjust if needed)
     const [students] = await db.execute(
       "SELECT student_id, first_name, surname, date_of_birth, grade, role, shirt_size, dietary_requirements FROM Student WHERE team_id = ?",
       [teamId]
     );
-
-    // 5. Documents
-    const [documents] = await db.execute(
-      "SELECT document_id, name, type FROM Document WHERE team_id = ?",
-      [teamId]
-    );
-
-    // 6. Event Teams
     const [eventTeams] = await db.execute(
       "SELECT event_team_id, event_id, total_points, created_at FROM Event_Team WHERE team_id = ?",
       [teamId]
     );
 
-    res.json({
-      team,
-      school,
-      coaches,
-      students,
-      documents,
-      eventTeams,
-    });
+    res.json({ team, school, coaches, students, eventTeams });
   } catch (err) {
     console.error("GET /teams/:id/details error:", err);
     res.status(500).json({ message: "Failed to fetch team details." });
   }
 });
 
-module.exports = router;
+// ─── GET /api/teams/:id/download/:field ──────────────────────
+// Optional endpoint to retrieve a specific file (blob) for download
+router.get("/:id/download/:field", async (req, res) => {
+  const { id, field } = req.params;
+  const allowed = ["material_bill", "engineering_plan", "project_report", "engineering_journal"];
+  if (!allowed.includes(field)) {
+    return res.status(400).json({ message: "Invalid file field." });
+  }
+
+  try {
+    const [rows] = await db.execute(`SELECT ${field} FROM Team WHERE team_id = ?`, [id]);
+    if (!rows[0] || !rows[0][field]) {
+      return res.status(404).json({ message: "File not found." });
+    }
+    const buffer = rows[0][field];
+    res.setHeader("Content-Type", "application/octet-stream");
+    res.setHeader("Content-Disposition", `attachment; filename="${field}_${id}.bin"`);
+    res.send(buffer);
+  } catch (err) {
+    console.error("GET /teams/:id/download/:field error:", err);
+    res.status(500).json({ message: "Failed to retrieve file." });
+  }
+});
+
+module.exports = router; 

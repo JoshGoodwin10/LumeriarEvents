@@ -3,9 +3,9 @@ const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
 function authHeaders() {
   const token = localStorage.getItem("token");
   return {
-    "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
+  // Do NOT set Content-Type – browser will set it for FormData
 }
 
 async function handleResponse(res: Response) {
@@ -19,34 +19,56 @@ export interface Team {
   team_name: string;
   category: string | null;
   school_id: number | null;
-  school_name?: string | null; // Optional, included when fetching teams with school details
-  year: number | null;
+  school_name?: string | null;
   theme: string | null;
   project_description: string | null;
+  province: string | null;
+  event: string | null;
+  how_heard: string | null;
+  material_bill: string | null;   // eventually a filename or URL, but for now we store the blob reference
+  engineering_plan: string | null;
+  project_report: string | null;
+  engineering_journal: string | null;
   created_at: string;
 }
 
 export interface TeamFilters {
   school_id?: string;
   category?: string;
-  year?: string;
   search?: string;
 }
 
 export interface FilterOptions {
   categories: string[];
-  years: number[];
   school_ids: number[];
 }
 
-// ── Read ──────────────────────────────────────────────────────
+// ── CREATE (multipart/form-data) ─────────────────────────────
+export async function createTeam(formData: FormData) {
+  const res = await fetch(`${API_BASE}/api/teams`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: formData,
+  });
+  return handleResponse(res);
+}
+
+// ── UPDATE (multipart/form-data) ─────────────────────────────
+export async function updateTeam(id: number, formData: FormData) {
+  const res = await fetch(`${API_BASE}/api/teams/${id}`, {
+    method: "PUT",
+    headers: authHeaders(),
+    body: formData,
+  });
+  return handleResponse(res);
+}
+
+// ── READ ─────────────────────────────────────────────────────
 export async function fetchTeams(filters: TeamFilters = {}): Promise<Team[]> {
   const params = new URLSearchParams();
   if (filters.school_id) params.set("school_id", filters.school_id);
   if (filters.category) params.set("category", filters.category);
-  if (filters.year) params.set("year", filters.year);
   if (filters.search) params.set("search", filters.search);
-
   const res = await fetch(`${API_BASE}/api/teams?${params}`, { headers: authHeaders() });
   return handleResponse(res);
 }
@@ -56,27 +78,6 @@ export async function fetchFilterOptions(): Promise<FilterOptions> {
   return handleResponse(res);
 }
 
-// ── Create ────────────────────────────────────────────────────
-export async function createTeam(data: Omit<Team, "team_id" | "created_at">) {
-  const res = await fetch(`${API_BASE}/api/teams`, {
-    method: "POST",
-    headers: authHeaders(),
-    body: JSON.stringify(data),
-  });
-  return handleResponse(res);
-}
-
-// ── Update ────────────────────────────────────────────────────
-export async function updateTeam(id: number, data: Omit<Team, "team_id" | "created_at">) {
-  const res = await fetch(`${API_BASE}/api/teams/${id}`, {
-    method: "PUT",
-    headers: authHeaders(),
-    body: JSON.stringify(data),
-  });
-  return handleResponse(res);
-}
-
-// ── Delete ────────────────────────────────────────────────────
 export async function deleteTeam(id: number) {
   const res = await fetch(`${API_BASE}/api/teams/${id}`, {
     method: "DELETE",
@@ -85,8 +86,7 @@ export async function deleteTeam(id: number) {
   return handleResponse(res);
 }
 
-// api/teams.ts
-
+// ── Team details (with coaches, students, etc.) ──────────────
 export interface TeamWithDetails {
   team: Team;
   school: {

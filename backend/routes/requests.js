@@ -9,7 +9,7 @@ router.use(authMiddleware);
 router.get("/", async (req, res) => {
     try {
         const { search, is_approved } = req.query;
-        let query = `SELECT * FROM TeamRequest WHERE 1=1`;
+        let query = `SELECT * FROM Team_Request WHERE 1=1`;
         const params = [];
 
         if (search) {
@@ -35,14 +35,14 @@ router.get("/:id/details", async (req, res) => {
     const requestId = req.params.id;
     try {
         // TeamRequest
-        const [tr] = await db.execute("SELECT * FROM TeamRequest WHERE request_id = ?", [requestId]);
+        const [tr] = await db.execute("SELECT * FROM Team_Request WHERE request_id = ?", [requestId]);
         if (tr.length === 0) return res.status(404).json({ message: "Request not found." });
 
         // StudentRequest entries
-        const [students] = await db.execute("SELECT * FROM StudentRequest WHERE requested_team = ?", [requestId]);
+        const [students] = await db.execute("SELECT * FROM Student_Request WHERE requested_team = ?", [requestId]);
 
         // CoachRequest (only one per request? assuming one coach per team)
-        const [coach] = await db.execute("SELECT * FROM CoachRequest WHERE requested_team = ?", [requestId]);
+        const [coach] = await db.execute("SELECT * FROM Coach_Request WHERE requested_team = ?", [requestId]);
 
         res.json({
             teamRequest: tr[0],
@@ -63,7 +63,7 @@ router.post("/:id/approve", async (req, res) => {
         await connection.beginTransaction();
 
         // 1. Fetch the team request
-        const [tr] = await connection.execute("SELECT * FROM TeamRequest WHERE request_id = ?", [requestId]);
+        const [tr] = await connection.execute("SELECT * FROM Team_Request WHERE request_id = ?", [requestId]);
         if (tr.length === 0) throw new Error("Request not found");
         const teamReq = tr[0];
         if (teamReq.is_approved) throw new Error("Request already approved");
@@ -85,7 +85,7 @@ router.post("/:id/approve", async (req, res) => {
         const teamId = teamResult.insertId;
 
         // 3. Create Coach (from CoachRequest)
-        const [coachReq] = await connection.execute("SELECT * FROM CoachRequest WHERE requested_team = ?", [requestId]);
+        const [coachReq] = await connection.execute("SELECT * FROM Coach_Request WHERE requested_team = ?", [requestId]);
         if (coachReq.length > 0) {
             const c = coachReq[0];
             await connection.execute(
@@ -96,7 +96,7 @@ router.post("/:id/approve", async (req, res) => {
         }
 
         // 4. Create Students (from StudentRequest)
-        const [students] = await connection.execute("SELECT * FROM StudentRequest WHERE requested_team = ?", [requestId]);
+        const [students] = await connection.execute("SELECT * FROM Student_Request WHERE requested_team = ?", [requestId]);
         for (const s of students) {
             await connection.execute(
                 `INSERT INTO Student (first_name, surname, date_of_birth, grade, role, team_id, shirt_size, dietary_requirements, created_at)
@@ -115,7 +115,7 @@ router.post("/:id/approve", async (req, res) => {
         }
 
         // 6. Mark request as approved
-        await connection.execute("UPDATE TeamRequest SET is_approved = 1 WHERE request_id = ?", [requestId]);
+        await connection.execute("UPDATE Team_Request SET is_approved = 1 WHERE request_id = ?", [requestId]);
 
         await connection.commit();
         res.json({ message: "Request approved, team created successfully.", team_id: teamId });
