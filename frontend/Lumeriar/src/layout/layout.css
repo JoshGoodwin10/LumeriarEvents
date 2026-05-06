@@ -2,7 +2,8 @@
 .site-header {
     position: sticky;
     top: 0;
-    z-index: 1000;
+    z-index: 1010;
+    /* ✅ bump up by 10 */
     background-color: var(--color-white);
     border-bottom: 1px solid #e8e8e8;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
@@ -92,7 +93,8 @@
 .nav__dropdown {
     display: none;
     position: absolute;
-    top: calc(100% + 8px);
+    top: 100%;
+    /* ✅ removes the 8px gap */
     left: 0;
     min-width: 210px;
     background-color: var(--color-white);
@@ -101,7 +103,8 @@
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
     list-style: none;
     padding: 6px 0;
-    z-index: 999;
+    z-index: 1020;
+    /* ✅ higher than banner (1000) */
 }
 
 .nav__item--dropdown:hover .nav__dropdown {

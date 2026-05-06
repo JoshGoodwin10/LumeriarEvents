@@ -181,7 +181,7 @@ const Dashboard: React.FC = () => {
                 <path d="M14 8L20 11V17L14 20L8 17V11L14 8Z" fill="currentColor" opacity="0.5" />
               </svg>
             </div>
-            {!collapsed && <span className="brand-name">NEXUS</span>}
+            {!collapsed && <span className="brand-name">LUMERIAR</span>}
           </div>
           <button className="collapse-btn" onClick={() => setCollapsed(c => !c)} title="Toggle sidebar">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

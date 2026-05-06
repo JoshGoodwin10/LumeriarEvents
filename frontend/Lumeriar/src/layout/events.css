@@ -1,0 +1,98 @@
+.events-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.sections {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+}
+
+.sections button {
+    padding: 0.6rem 1.2rem;
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.events-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+}
+
+.event-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    padding: 1.2rem;
+    transition: transform 0.2s;
+}
+
+.event-card:hover {
+    transform: translateY(-4px);
+}
+
+.event-card__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+}
+
+.event-card__header h2 {
+    font-size: 1.3rem;
+    margin: 0;
+}
+
+.event-registration-status {
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+}
+
+.event-registration-status.open {
+    background: #d4edda;
+    color: #155724;
+}
+
+.event-registration-status.closed {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.event-card__details p {
+    margin: 0.4rem 0;
+    font-size: 0.9rem;
+}
+
+.event-card__actions {
+    margin-top: 1rem;
+    display: flex;
+    gap: 0.8rem;
+}
+
+.btn-register,
+.btn-details {
+    padding: 0.4rem 1rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.btn-register {
+    background: #28a745;
+    color: white;
+}
+
+.btn-details {
+    background: #007bff;
+    color: white;
+}

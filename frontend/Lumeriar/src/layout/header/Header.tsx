@@ -36,14 +36,22 @@ const Header = () => {
                             </ul>
                         </li>
                         <li className="nav__item nav__item--dropdown">
-                            <a className="nav__link" href="/pages/index.html#services">
+                            <Link to="./events" className="nav__link">
                                 Events <i className="fa fa-caret-down nav__caret"></i>
-                            </a>
+                            </Link>
                             <ul className="nav__dropdown">
-                                <li className="nav__dropdown-item"><a className="nav__dropdown-link" href="/pages/curriculums.html">Leaderboards</a></li>
-                                <li className="nav__dropdown-item"><a className="nav__dropdown-link" href="/pages/clubs.html">Register</a></li>
-                                <li className="nav__dropdown-item"><a className="nav__dropdown-link" href="/pages/teacherdevelopment.html">Winners</a></li>
-                                <li className="nav__dropdown-item"><a className="nav__dropdown-link" href="/pages/teacherdevelopment.html">Rules & Docs</a></li>
+                                <li className="nav__dropdown-item">
+                                    <Link to="/leaderboards" className="nav__dropdown-link">Leaderboards</Link>
+                                </li>
+                                <li className="nav__dropdown-item">
+                                    <Link to="/register-event" className="nav__dropdown-link">Register</Link>
+                                </li>
+                                <li className="nav__dropdown-item">
+                                    <Link to="/winners" className="nav__dropdown-link">Winners</Link>
+                                </li>
+                                <li className="nav__dropdown-item">
+                                    <Link to="/rules-docs" className="nav__dropdown-link">Rules & Docs</Link>
+                                </li>
                             </ul>
                         </li>
                         <li className="nav__item"><a className="nav__link" href="/pages/hardwarekits.html">Hardware &amp; Kits</a></li>

@@ -15,6 +15,7 @@ import EventsDashboard from './pages/Dashboards/EventsDashboard';
 import JudgesDashboard from './pages/Dashboards/JudgesDashboard';
 import EventDetail from './pages/Details/EventDetail';
 import RequestsDashboard from './pages/Dashboards/RequestsDashboard';
+import Events from './pages/PublicPages/Events';
 
 const HomePage = () => (
   <>
@@ -87,6 +88,7 @@ function App() {
           <Route path="/index.html" element={<HomePage />} />
           <Route path="/pages/index.html" element={<HomePage />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/events" element={<Events />} />
 
           {/* Private routes (all require authentication) */}
           <Route element={<PrivateRoute />}>
