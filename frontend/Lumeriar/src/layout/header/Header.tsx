@@ -41,13 +41,10 @@ const Header = () => {
                             </Link>
                             <ul className="nav__dropdown">
                                 <li className="nav__dropdown-item">
+                                    <Link to="./events" className="nav__dropdown-link">Events</Link>
+                                </li>
+                                <li className="nav__dropdown-item">
                                     <Link to="/leaderboards" className="nav__dropdown-link">Leaderboards</Link>
-                                </li>
-                                <li className="nav__dropdown-item">
-                                    <Link to="/register-event" className="nav__dropdown-link">Register</Link>
-                                </li>
-                                <li className="nav__dropdown-item">
-                                    <Link to="/winners" className="nav__dropdown-link">Winners</Link>
                                 </li>
                                 <li className="nav__dropdown-item">
                                     <Link to="/rules-docs" className="nav__dropdown-link">Rules & Docs</Link>

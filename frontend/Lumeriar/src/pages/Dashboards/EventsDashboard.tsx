@@ -1,4 +1,3 @@
-// EventsDashboard.tsx
 import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -11,12 +10,17 @@ import {
     type EventFilters,
     type EventFilterOptions,
 } from "../../api/events";
-import "../../layout/dashboard.css"; // adjust path if needed
+import "../../layout/dashboard.css";
 import { Link } from "react-router-dom";
 
+// Empty form for new event – matches the new schema
 const emptyForm = (): Omit<Event, "event_id" | "created_at"> => ({
     name: "",
     date: "",
+    venue: "",
+    start_time: "09:00:00",
+    end_time: "17:00:00",
+    registration_open: true,
     category: "",
     team_count: 0,
 });
@@ -27,7 +31,27 @@ function EventModal({ event, onClose, onSaved }: {
     onClose: () => void;
     onSaved: () => void;
 }) {
-    const [form, setForm] = useState(event ? { ...event } : emptyForm());
+    // Helper: format any date string (ISO or 'YYYY-MM-DD') to YYYY-MM-DD for input[type="date"]
+    const formatDateForInput = (dateStr: string | null): string => {
+        if (!dateStr) return '';
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr; // already correct
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return '';
+        return d.toISOString().split('T')[0];
+    };
+
+    // Initialise form state – if editing, format the date correctly
+    const getInitialForm = () => {
+        if (event) {
+            return {
+                ...event,
+                date: formatDateForInput(event.date),
+            };
+        }
+        return emptyForm();
+    };
+
+    const [form, setForm] = useState(getInitialForm());
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
     const isEdit = !!event;
@@ -46,12 +70,19 @@ function EventModal({ event, onClose, onSaved }: {
         try {
             const payload = {
                 name: form.name,
-                date: form.date,
+                date: form.date,               // now in YYYY-MM-DD
+                venue: form.venue,
+                start_time: form.start_time,
+                end_time: form.end_time,
+                registration_open: form.registration_open,
                 category: form.category,
                 team_count: form.team_count,
             };
-            if (isEdit) await updateEvent(event.event_id, payload);
-            else await createEvent(payload);
+            if (isEdit) {
+                await updateEvent(event.event_id, payload);
+            } else {
+                await createEvent(payload);
+            }
             onSaved();
         } catch (err: any) {
             setError(err.message || "Save failed.");
@@ -78,8 +109,30 @@ function EventModal({ event, onClose, onSaved }: {
                             <input type="date" className="tdm-input" value={form.date} onChange={e => set("date", e.target.value)} />
                         </div>
                         <div className="tdm-field">
+                            <label className="tdm-label">Venue</label>
+                            <input className="tdm-input" value={form.venue ?? ""} onChange={e => set("venue", e.target.value)} placeholder="Convention Center" />
+                        </div>
+                    </div>
+                    <div className="tdm-row">
+                        <div className="tdm-field">
+                            <label className="tdm-label">Start Time</label>
+                            <input type="time" className="tdm-input" value={form.start_time?.slice(0, 5) ?? "09:00"} onChange={e => set("start_time", e.target.value)} />
+                        </div>
+                        <div className="tdm-field">
+                            <label className="tdm-label">End Time</label>
+                            <input type="time" className="tdm-input" value={form.end_time?.slice(0, 5) ?? "17:00"} onChange={e => set("end_time", e.target.value)} />
+                        </div>
+                    </div>
+                    <div className="tdm-row">
+                        <div className="tdm-field">
                             <label className="tdm-label">Category</label>
                             <input className="tdm-input" value={form.category ?? ""} onChange={e => set("category", e.target.value)} placeholder="Robotics" />
+                        </div>
+                        <div className="tdm-field">
+                            <label className="tdm-label" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                <input type="checkbox" checked={form.registration_open} onChange={e => set("registration_open", e.target.checked)} />
+                                Registration Open
+                            </label>
                         </div>
                     </div>
                     {error && <p className="tdm-error">{error}</p>}
@@ -96,7 +149,7 @@ function EventModal({ event, onClose, onSaved }: {
     );
 }
 
-// ─── Delete Confirm ───────────────────────────────────────────
+// ─── Delete Confirm (unchanged) ───────────────────────────────
 function DeleteConfirm({ event, onClose, onDeleted }: {
     event: Event;
     onClose: () => void;
@@ -208,7 +261,15 @@ export default function EventsDashboard() {
                     <table className="td-table">
                         <thead>
                             <tr>
-                                <th>ID</th><th>Event Name</th><th>Category</th><th>Date</th><th>Created</th><th>Actions</th>
+                                <th>ID</th>
+                                <th>Event Name</th>
+                                <th>Date</th>
+                                <th>Venue</th>
+                                <th>Time</th>
+                                <th>Category</th>
+                                <th>Registration</th>
+                                <th>Teams</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -220,12 +281,30 @@ export default function EventsDashboard() {
                                             {event.name}
                                         </Link>
                                     </td>
-                                    <td>{event.category ?? <span className="td-null">—</span>}</td>
                                     <td>{new Date(event.date).toLocaleDateString()}</td>
+                                    <td>{event.venue ?? <span className="td-null">—</span>}</td>
+                                    <td className="td-time">
+                                        {event.start_time?.slice(0, 5)} – {event.end_time?.slice(0, 5)}
+                                    </td>
+                                    <td>{event.category ?? <span className="td-null">—</span>}</td>
+                                    <td>
+                                        <span className={`reg-badge ${event.registration_open ? "open" : "closed"}`}>
+                                            {event.registration_open ? "Open" : "Closed"}
+                                        </span>
+                                    </td>
                                     <td>{event.team_count ?? 0}</td>
-                                    <td className="td-date">{new Date(event.created_at).toLocaleDateString()}</td>
                                     <td className="td-actions">
-                                        {/* buttons remain same */}
+                                        <button className="btn-icon" onClick={() => setEditEvent(event)} title="Edit">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <path d="M17 3l4 4-7 7H10v-4l7-7z" /><path d="M4 20h16" />
+                                            </svg>
+                                        </button>
+                                        <button className="btn-icon" onClick={() => setDeleteTarget(event)} title="Delete">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <path d="M4 7h16M10 11v6M14 11v6M5 7l1 13a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-13" />
+                                                <line x1="9" y1="3" x2="15" y2="3" />
+                                            </svg>
+                                        </button>
                                     </td>
                                 </tr>
                             ))}

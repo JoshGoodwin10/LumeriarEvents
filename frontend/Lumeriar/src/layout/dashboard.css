@@ -993,3 +993,27 @@
         padding: 20px;
     }
 }
+
+.reg-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.reg-badge.open {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.reg-badge.closed {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.td-time {
+    white-space: nowrap;
+    font-family: monospace;
+}
