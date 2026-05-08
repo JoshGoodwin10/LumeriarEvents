@@ -322,6 +322,130 @@
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 }
 
+/* Registration wizard */
+.registration-steps {
+    margin-top: 2rem;
+}
+
+.step-indicator {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 0.5rem;
+}
+
+.step-indicator span {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #aaa;
+}
+
+.step-indicator span.active {
+    color: var(--navy);
+    border-bottom: 3px solid var(--orange);
+    padding-bottom: 0.5rem;
+}
+
+.step-form {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+.form-row {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.form-row .form-group {
+    flex: 1;
+}
+
+.student-card,
+.coach-card {
+    border: 1px solid #e9ecef;
+    padding: 1rem;
+    margin: 1rem 0;
+    border-radius: 8px;
+}
+
+.btn-add,
+.btn-remove {
+    background: var(--blue-light);
+    border: none;
+    padding: 0.3rem 0.8rem;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 0.5rem;
+}
+
+.btn-remove {
+    background: #dc3545;
+    color: white;
+}
+
+.step-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1.5rem;
+}
+
+.btn-next,
+.btn-prev,
+.btn-submit {
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.btn-next,
+.btn-submit {
+    background: var(--orange);
+    color: white;
+}
+
+.btn-prev {
+    background: #6c757d;
+    color: white;
+}
+
+.error-message {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 0.5rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+}
+
+.review-section {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #eee;
+}
+
 /* Responsive: stack the card on small screens */
 @media (max-width: 700px) {
     .event-card {
