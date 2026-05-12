@@ -12,10 +12,14 @@ const eventsRoutes = require("./routes/events");
 const scoresRoutes = require("./routes/scores");
 const judgesRoutes = require("./routes/judges");
 const requestsRoutes = require("./routes/requests");
+const registerRoutes = require("./routes/register");
 // etc.
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+const path = require('path');
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ── Middleware ────────────────────────────────────────────────
 app.use(cors({
@@ -23,6 +27,7 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json());
+app.use('/uploads', express.static('uploads'));
 
 // ── Routes ────────────────────────────────────────────────────
 app.use("/api/auth", authRoutes);
@@ -34,6 +39,7 @@ app.use("/api/events", eventsRoutes);
 app.use("/api/scores", scoresRoutes);
 app.use("/api/judges", judgesRoutes);
 app.use("/api/requests", requestsRoutes);
+app.use("/api/register", registerRoutes);
 // etc.
 
 // Health check

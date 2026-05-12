@@ -18,6 +18,7 @@ import RequestsDashboard from './pages/Dashboards/RequestsDashboard';
 import Events from './pages/PublicPages/Events';
 import Leaderboards from './pages/PublicPages/Leaderboards';
 import Register from './pages/PublicPages/Register';
+import RequestDetail from './pages/Details/RequestDetail';
 
 const HomePage = () => (
   <>
@@ -105,6 +106,7 @@ function App() {
             <Route path="/events" element={<EventsDashboard />} />
             <Route path="/judges" element={<JudgesDashboard />} />
             <Route path="/requests" element={<RequestsDashboard />} />
+            <Route path="/requests/:id" element={<RequestDetail />} />
             <Route path="/teams/:id" element={<TeamDetail />} />
             <Route path="/events/:id" element={<EventDetail />} />
             {/* Catch‑all inside private area: redirect to dashboard */}
