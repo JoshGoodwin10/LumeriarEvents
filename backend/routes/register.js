@@ -1,28 +1,13 @@
+// routes/register.js
 const express = require('express');
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
-const { v4: uuidv4 } = require('uuid');
 const db = require('../db');
+const { sendEmail } = require('../utils/emailService');
 
 const router = express.Router();
 
-// Configure multer storage
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const dir = './uploads/requests/';
-        if (!fs.existsSync(dir)) {
-            fs.mkdirSync(dir, { recursive: true });
-        }
-        cb(null, dir);
-    },
-    filename: (req, file, cb) => {
-        const ext = path.extname(file.originalname);
-        const uniqueName = `${uuidv4()}${ext}`;
-        cb(null, uniqueName);
-    }
-});
-
+// Use memory storage – files stay as Buffers
+const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 // Helper: find or create school
@@ -34,13 +19,39 @@ const findOrCreateSchool = async (schoolName) => {
     return result.insertId;
 };
 
-// POST /api/register - accept any file fields (.any())
+// Helper: send a buffer as downloadable file
+const sendBufferAsDownload = (res, buffer, filename) => {
+    if (!buffer || buffer.length === 0) {
+        return res.status(404).json({ message: 'File not found.' });
+    }
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(buffer);
+};
+
+// Helper: copy BLOB from team_request to team (used during approval)
+const copyBlobIfExists = async (connection, requestId, teamId, fieldName) => {
+    const [rows] = await connection.execute(
+        `SELECT ${fieldName} FROM team_request WHERE request_id = ?`,
+        [requestId]
+    );
+    const blob = rows[0]?.[fieldName];
+    if (blob) {
+        await connection.execute(
+            `UPDATE team SET ${fieldName} = ? WHERE team_id = ?`,
+            [blob, teamId]
+        );
+    }
+};
+
+// =======================
+// POST – Register a new team (uploads files into database as BLOBs)
+// =======================
 router.post('/', upload.any(), async (req, res) => {
     console.log('📥 Registration request received');
     console.log('Files:', req.files.map(f => f.fieldname));
 
     try {
-        // 1. Parse JSON strings
         let teamData, studentsData, coachData;
         try {
             teamData = JSON.parse(req.body.team);
@@ -51,23 +62,20 @@ router.post('/', upload.any(), async (req, res) => {
             return res.status(400).json({ message: 'Invalid JSON data', error: parseErr.message });
         }
 
-        // 2. Find or create school
         const schoolId = await findOrCreateSchool(teamData.school);
         if (!schoolId) {
             return res.status(400).json({ message: 'School name is required' });
         }
 
-        // Helper to get uploaded file path by fieldname
-        const getFile = (fieldname) => {
+        const getFileBuffer = (fieldname) => {
             const file = req.files.find(f => f.fieldname === fieldname);
-            return file ? file.filename : null;
+            return file ? file.buffer : null;
         };
 
-        // 3. Insert into team_request
-        const materialBill = getFile('material_bill');
-        const engineeringPlan = getFile('engineering_plan');
-        const projectReport = getFile('project_report');
-        const engineeringJournal = getFile('engineering_journal');
+        const materialBill = getFileBuffer('material_bill');
+        const engineeringPlan = getFileBuffer('engineering_plan');
+        const projectReport = getFileBuffer('project_report');
+        const engineeringJournal = getFileBuffer('engineering_journal');
 
         const [teamResult] = await db.execute(
             `INSERT INTO team_request 
@@ -87,17 +95,17 @@ router.post('/', upload.any(), async (req, res) => {
                 engineeringPlan,
                 projectReport,
                 engineeringJournal,
-                0   // is_approved = false
+                0
             ]
         );
         const requestId = teamResult.insertId;
         console.log(`✅ Team request created with ID ${requestId}`);
 
-        // 4. Insert students
+        // Insert students
         for (let i = 0; i < studentsData.length; i++) {
             const student = studentsData[i];
-            const consentFile = getFile(`student_consent_${i}`);
-            const integrityFile = getFile(`student_integrity_${i}`);
+            const consentBuffer = getFileBuffer(`student_consent_${i}`);
+            const integrityBuffer = getFileBuffer(`student_integrity_${i}`);
 
             await db.execute(
                 `INSERT INTO student_request 
@@ -111,8 +119,8 @@ router.post('/', upload.any(), async (req, res) => {
                     requestId,
                     student.shirt_size,
                     student.dietary_requirements || null,
-                    consentFile,
-                    integrityFile,
+                    consentBuffer,
+                    integrityBuffer,
                     student.role,
                     student.grade
                 ]
@@ -120,8 +128,8 @@ router.post('/', upload.any(), async (req, res) => {
         }
         console.log(`✅ Inserted ${studentsData.length} students`);
 
-        // 5. Insert coach
-        const coachIntegrity = getFile('coach_integrity');
+        // Insert coach
+        const coachIntegrity = getFileBuffer('coach_integrity');
         await db.execute(
             `INSERT INTO coach_request 
             (first_name, surname, email, phone_no, date_of_birth, request_id, staff_number, 
@@ -144,64 +152,26 @@ router.post('/', upload.any(), async (req, res) => {
         console.log(`✅ Coach inserted for request ${requestId}`);
 
         res.status(201).json({ message: 'Registration submitted successfully', requestId });
-
     } catch (err) {
         console.error('❌ Registration error:', err);
         res.status(500).json({ message: 'Server error during registration', error: err.message });
     }
 });
 
-// GET /api/register/:id - fetch single request with all details
-router.get('/:id', async (req, res) => {
-    try {
-        const requestId = req.params.id;
-
-        // Get team request
-        const [teamRows] = await db.execute(`
-            SELECT r.*, s.school_name, e.name AS event_name
-            FROM team_request r
-            LEFT JOIN School s ON r.school_id = s.school_id
-            LEFT JOIN Event e ON r.event = e.event_id
-            WHERE r.request_id = ?
-        `, [requestId]);
-
-        if (teamRows.length === 0) {
-            return res.status(404).json({ message: 'Request not found' });
-        }
-        const team = teamRows[0];
-
-        // Get all students for this request
-        const [students] = await db.execute(`
-            SELECT student_id, first_name, surname, date_of_birth, grade, role,
-                   dietary_requirements, shirt_size, parent_guardian_consent_form,
-                   signed_integrity_declaration, created_at
-            FROM student_request
-            WHERE request_id = ?
-        `, [requestId]);
-
-        // Get coach for this request
-        const [coachRows] = await db.execute(`
-            SELECT coach_id, first_name, surname, email, phone_no, date_of_birth,
-                   staff_number, dietary_requirements, shirt_size,
-                   signed_integrity_declaration, school_id, created_at
-            FROM coach_request
-            WHERE request_id = ?
-        `, [requestId]);
-        const coach = coachRows[0] || null;
-
-        res.json({ team, students, coach });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Failed to fetch request details' });
-    }
-});
-
-// GET /api/register - fetch all registration requests with filters (for admin)
+// =======================
+// GET /api/register – List all requests with filters (admin dashboard)
+// =======================
 router.get('/', async (req, res) => {
     try {
         const { search, is_approved } = req.query;
         let query = `
-            SELECT r.*, s.school_name, e.name AS event_name
+            SELECT r.request_id, r.team_name, r.category, r.theme, r.province, r.event,
+                   r.project_description, r.how_heard, r.is_approved, r.created_at,
+                   s.school_name, e.name AS event_name,
+                   (r.material_bill IS NOT NULL) AS has_material_bill,
+                   (r.engineering_plan IS NOT NULL) AS has_engineering_plan,
+                   (r.project_report IS NOT NULL) AS has_project_report,
+                   (r.engineering_journal IS NOT NULL) AS has_engineering_journal
             FROM team_request r
             LEFT JOIN School s ON r.school_id = s.school_id
             LEFT JOIN Event e ON r.event = e.event_id
@@ -221,6 +191,7 @@ router.get('/', async (req, res) => {
         query += ` ORDER BY r.created_at DESC`;
 
         const [rows] = await db.execute(query, params);
+        // The BLOB columns are not selected, so no need to strip them
         res.json(rows);
     } catch (err) {
         console.error(err);
@@ -228,93 +199,280 @@ router.get('/', async (req, res) => {
     }
 });
 
-// PUT /api/register/:id/approve - approve a request (admin)
-router.put('/:id/approve', async (req, res) => {
+// =======================
+// GET /api/register/:id – Fetch one request with file existence flags
+// =======================
+router.get('/:id', async (req, res) => {
     try {
-        const [result] = await db.execute('UPDATE team_request SET is_approved = 1 WHERE request_id = ?', [req.params.id]);
-        if (result.affectedRows === 0) {
+        const requestId = req.params.id;
+
+        const [teamRows] = await db.execute(`
+            SELECT 
+                r.request_id, r.team_name, r.category, r.school_id, r.theme, r.province, r.event,
+                r.project_description, r.how_heard, r.is_approved, r.created_at,
+                s.school_name, e.name AS event_name,
+                (r.material_bill IS NOT NULL) AS has_material_bill,
+                (r.engineering_plan IS NOT NULL) AS has_engineering_plan,
+                (r.project_report IS NOT NULL) AS has_project_report,
+                (r.engineering_journal IS NOT NULL) AS has_engineering_journal
+            FROM team_request r
+            LEFT JOIN School s ON r.school_id = s.school_id
+            LEFT JOIN Event e ON r.event = e.event_id
+            WHERE r.request_id = ?
+        `, [requestId]);
+
+        if (teamRows.length === 0) {
             return res.status(404).json({ message: 'Request not found' });
         }
-        res.json({ message: 'Request approved' });
+        const team = teamRows[0];
+
+        const [students] = await db.execute(`
+            SELECT 
+                student_id, first_name, surname, date_of_birth, grade, role,
+                dietary_requirements, shirt_size, created_at,
+                (parent_guardian_consent_form IS NOT NULL) AS has_consent,
+                (signed_integrity_declaration IS NOT NULL) AS has_integrity
+            FROM student_request
+            WHERE request_id = ?
+        `, [requestId]);
+
+        const [coachRows] = await db.execute(`
+            SELECT 
+                coach_id, first_name, surname, email, phone_no, date_of_birth,
+                staff_number, dietary_requirements, shirt_size, school_id, created_at,
+                (signed_integrity_declaration IS NOT NULL) AS has_integrity
+            FROM coach_request
+            WHERE request_id = ?
+        `, [requestId]);
+        const coach = coachRows[0] || null;
+
+        res.json({ team, students, coach });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: 'Failed to approve' });
+        res.status(500).json({ message: 'Failed to fetch request details' });
     }
 });
 
-// GET /api/register/:id/download/:field
-// Download a specific file from a registration request
-router.get('/:id/download/:field', async (req, res) => {
+// =======================
+// PUT /api/register/:id/approve – Approve request, create team/students/coach/event_team/score, send email
+// =======================
+router.put('/:id/approve', async (req, res) => {
+    const requestId = req.params.id;
+    let connection;
     try {
-        const requestId = req.params.id;
-        const field = req.params.field;
+        connection = await db.getConnection();
+        await connection.beginTransaction();
 
-        // Allowed fields (from team_request, student_request, coach_request)
-        const allowedFields = [
-            'material_bill', 'engineering_plan', 'project_report', 'engineering_journal',
-            'parent_guardian_consent', 'signed_integrity_declaration', 'coach_integrity'
-        ];
-        if (!allowedFields.includes(field)) {
-            return res.status(400).json({ message: 'Invalid file field' });
+        // 1. Get request details
+        const [teamReqRows] = await connection.execute(
+            `SELECT * FROM team_request WHERE request_id = ?`,
+            [requestId]
+        );
+        if (teamReqRows.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ message: 'Request not found' });
         }
+        const teamReq = teamReqRows[0];
 
-        let filename = null;
-        let studentIndex = null;
-        let isStudentField = false;
-        let isCoachField = false;
+        const [studentsReq] = await connection.execute(
+            `SELECT * FROM student_request WHERE request_id = ?`,
+            [requestId]
+        );
+        const [coachReqRows] = await connection.execute(
+            `SELECT * FROM coach_request WHERE request_id = ?`,
+            [requestId]
+        );
+        const coachReq = coachReqRows[0];
 
-        // Handle student files: they come as "parent_guardian_consent_0" or "signed_integrity_declaration_0"
-        if (field.startsWith('parent_guardian_consent')) {
-            const match = field.match(/parent_guardian_consent_(\d+)/);
-            if (match) {
-                studentIndex = parseInt(match[1], 10);
-                isStudentField = true;
+        // 2. Find or create coach by email (avoid duplication)
+        let coachId = null;
+        if (coachReq) {
+            const [existingCoach] = await connection.execute(
+                `SELECT coach_id FROM coach WHERE email = ?`,
+                [coachReq.email]
+            );
+            if (existingCoach.length > 0) {
+                coachId = existingCoach[0].coach_id;
+            } else {
+                const [coachResult] = await connection.execute(
+                    `INSERT INTO coach 
+                    (first_name, surname, email, phone_no, date_of_birth, staff_number, 
+                     dietary_requirements, shirt_size, signed_integrity_declaration, school_id, created_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+                    [
+                        coachReq.first_name,
+                        coachReq.surname,
+                        coachReq.email,
+                        coachReq.phone_no,
+                        coachReq.date_of_birth,
+                        coachReq.staff_number,
+                        coachReq.dietary_requirements,
+                        coachReq.shirt_size,
+                        coachReq.signed_integrity_declaration,
+                        teamReq.school_id
+                    ]
+                );
+                coachId = coachResult.insertId;
             }
-        } else if (field.startsWith('signed_integrity_declaration')) {
-            const match = field.match(/signed_integrity_declaration_(\d+)/);
-            if (match) {
-                studentIndex = parseInt(match[1], 10);
-                isStudentField = true;
+        }
+
+        // 3. Create team record (without BLOBs initially)
+        const [teamResult] = await connection.execute(
+            `INSERT INTO team 
+            (team_name, category, school_id, theme, province, event, project_description, how_heard, coach_id, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+            [
+                teamReq.team_name,
+                teamReq.category,
+                teamReq.school_id,
+                teamReq.theme,
+                teamReq.province,
+                teamReq.event,
+                teamReq.project_description,
+                teamReq.how_heard,
+                coachId
+            ]
+        );
+        const teamId = teamResult.insertId;
+
+        // 4. Copy BLOB fields from team_request to team
+        await copyBlobIfExists(connection, requestId, teamId, 'material_bill');
+        await copyBlobIfExists(connection, requestId, teamId, 'engineering_plan');
+        await copyBlobIfExists(connection, requestId, teamId, 'project_report');
+        await copyBlobIfExists(connection, requestId, teamId, 'engineering_journal');
+
+        // 5. Create student records
+        for (const student of studentsReq) {
+            await connection.execute(
+                `INSERT INTO student 
+                (first_name, surname, date_of_birth, team_id, grade, role, shirt_size, 
+                 dietary_requirements, parent_guardian_consent_form, signed_integrity_declaration, created_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+                [
+                    student.first_name,
+                    student.surname,
+                    student.date_of_birth,
+                    teamId,
+                    student.grade,
+                    student.role,
+                    student.shirt_size,
+                    student.dietary_requirements,
+                    student.parent_guardian_consent_form,
+                    student.signed_integrity_declaration
+                ]
+            );
+        }
+
+        // 6. Create event_team record
+        const [eventTeamResult] = await connection.execute(
+            `INSERT INTO event_team (team_id, event_id, total_points, created_at)
+             VALUES (?, ?, 0, NOW())`,
+            [teamId, teamReq.event]
+        );
+        const eventTeamId = eventTeamResult.insertId;
+
+        // 7. Create empty scorecard for round 1
+        await connection.execute(
+            `INSERT INTO score 
+            (event_team_id, round, technical_score, innovation_design_score, theme_score, 
+             real_world_score, teamwork_score, judge_id, is_approved)
+             VALUES (?, 1, 0, 0, 0, 0, 0, NULL, 0)`,
+            [eventTeamId]
+        );
+
+        // 8. Mark request as approved
+        await connection.execute(
+            `UPDATE team_request SET is_approved = 1 WHERE request_id = ?`,
+            [requestId]
+        );
+
+        await connection.commit();
+
+        // 9. Send confirmation email using Gmail API (do not block if fails)
+        if (coachReq && coachReq.email) {
+            const emailSubject = `Your team registration has been approved!`;
+            const emailBody = `Dear ${coachReq.first_name} ${coachReq.surname},
+
+Your registration for the team "${teamReq.team_name}" has been approved.
+
+Your team has been registered for the event: ${teamReq.event}.
+
+You can now log in to the portal to view scores and additional information.
+
+Best regards,
+Lumeriar Robotics Team`;
+            try {
+                await sendEmail(coachReq.email, emailSubject, emailBody);
+                console.log(`✅ Email sent to ${coachReq.email}`);
+            } catch (emailError) {
+                console.error(`❌ Failed to send email to ${coachReq.email}:`, emailError.message);
+                // Approval already succeeded, just log the error
             }
-        } else if (field === 'coach_integrity') {
-            isCoachField = true;
         }
 
-        // Query the request details
-        const [teamRows] = await db.execute('SELECT * FROM team_request WHERE request_id = ?', [requestId]);
-        if (teamRows.length === 0) return res.status(404).json({ message: 'Request not found' });
+        res.json({ message: 'Request approved, team created, and email sent.' });
+    } catch (err) {
+        if (connection) await connection.rollback();
+        console.error('Approval error:', err);
+        res.status(500).json({ message: 'Failed to approve request', error: err.message });
+    } finally {
+        if (connection) connection.release();
+    }
+});
 
-        if (!isStudentField && !isCoachField && teamRows[0][field]) {
-            filename = teamRows[0][field];
-        } else if (isCoachField) {
-            const [coachRows] = await db.execute('SELECT signed_integrity_declaration FROM coach_request WHERE request_id = ?', [requestId]);
-            if (coachRows.length && coachRows[0].signed_integrity_declaration) {
-                filename = coachRows[0].signed_integrity_declaration;
-            }
-        } else if (isStudentField && studentIndex !== null) {
-            const [studentRows] = await db.execute('SELECT parent_guardian_consent_form, signed_integrity_declaration FROM student_request WHERE request_id = ?', [requestId]);
-            if (studentRows.length > studentIndex) {
-                if (field.startsWith('parent_guardian_consent')) {
-                    filename = studentRows[studentIndex].parent_guardian_consent_form;
-                } else if (field.startsWith('signed_integrity_declaration')) {
-                    filename = studentRows[studentIndex].signed_integrity_declaration;
-                }
-            }
-        }
+// =======================
+// DOWNLOAD ENDPOINTS – Retrieve binary files from database
+// =======================
 
-        if (!filename) {
-            return res.status(404).json({ message: 'File not found' });
-        }
+// Download team document
+router.get('/:id/download/team/:field', async (req, res) => {
+    const { id, field } = req.params;
+    const allowed = ['material_bill', 'engineering_plan', 'project_report', 'engineering_journal'];
+    if (!allowed.includes(field)) return res.status(400).json({ message: 'Invalid field.' });
 
-        const filePath = path.join(__dirname, '../uploads/requests/', filename);
-        if (!fs.existsSync(filePath)) {
-            return res.status(404).json({ message: 'File does not exist on server' });
-        }
-
-        res.download(filePath, filename);
+    try {
+        const [rows] = await db.execute(`SELECT ${field} FROM team_request WHERE request_id = ?`, [id]);
+        const buffer = rows[0]?.[field];
+        sendBufferAsDownload(res, buffer, `${field}_${id}.pdf`);
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: 'Download failed' });
+        res.status(500).json({ message: 'Download failed.' });
+    }
+});
+
+// Download student document
+router.get('/:id/download/student/:index/:field', async (req, res) => {
+    const { id, index, field } = req.params;
+    const allowed = ['parent_guardian_consent_form', 'signed_integrity_declaration'];
+    if (!allowed.includes(field)) return res.status(400).json({ message: 'Invalid field.' });
+
+    try {
+        const [students] = await db.execute(
+            `SELECT ${field} FROM student_request WHERE request_id = ? ORDER BY student_id`,
+            [id]
+        );
+        const studentIdx = parseInt(index, 10);
+        const buffer = students[studentIdx]?.[field];
+        sendBufferAsDownload(res, buffer, `${field}_${id}_${index}.pdf`);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Download failed.' });
+    }
+});
+
+// Download coach integrity declaration
+router.get('/:id/download/coach/integrity', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const [rows] = await db.execute(
+            'SELECT signed_integrity_declaration FROM coach_request WHERE request_id = ?',
+            [id]
+        );
+        const buffer = rows[0]?.signed_integrity_declaration;
+        sendBufferAsDownload(res, buffer, `coach_integrity_${id}.pdf`);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Download failed.' });
     }
 });
 
