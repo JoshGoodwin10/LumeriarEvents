@@ -86,12 +86,11 @@ router.post("/", upload.fields([
 ]), async (req, res) => {
   const {
     team_name, category, school_id, theme, province,
-    event, project_description, how_heard
+    event, project_description, how_heard, coach_id   // <-- added coach_id
   } = req.body;
 
   if (!team_name) return res.status(400).json({ message: "team_name is required." });
 
-  // Extract files (as Buffers) – if no file, store null
   const material_bill = req.files["material_bill"] ? req.files["material_bill"][0].buffer : null;
   const engineering_plan = req.files["engineering_plan"] ? req.files["engineering_plan"][0].buffer : null;
   const project_report = req.files["project_report"] ? req.files["project_report"][0].buffer : null;
@@ -101,13 +100,13 @@ router.post("/", upload.fields([
     const [result] = await db.execute(
       `INSERT INTO Team (
         team_name, category, school_id, theme, province, event,
-        project_description, how_heard,
+        project_description, how_heard, coach_id,
         material_bill, engineering_plan, project_report, engineering_journal
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         team_name, category || null, school_id || null, theme || null,
         province || null, event || null, project_description || null,
-        how_heard || null,
+        how_heard || null, coach_id || null,
         material_bill, engineering_plan, project_report, engineering_journal
       ]
     );
@@ -127,20 +126,17 @@ router.put("/:id", upload.fields([
 ]), async (req, res) => {
   const {
     team_name, category, school_id, theme, province,
-    event, project_description, how_heard
+    event, project_description, how_heard, coach_id
   } = req.body;
   const teamId = req.params.id;
 
   try {
-    // First, fetch existing team to check existence
     const [existing] = await db.execute("SELECT * FROM Team WHERE team_id = ?", [teamId]);
     if (existing.length === 0) return res.status(404).json({ message: "Team not found." });
 
-    // Prepare update fields dynamically: only replace file if a new one is uploaded
     const updates = [];
     const values = [];
 
-    // Text fields (always update)
     updates.push("team_name = ?"); values.push(team_name);
     updates.push("category = ?"); values.push(category || null);
     updates.push("school_id = ?"); values.push(school_id || null);
@@ -149,8 +145,8 @@ router.put("/:id", upload.fields([
     updates.push("event = ?"); values.push(event || null);
     updates.push("project_description = ?"); values.push(project_description || null);
     updates.push("how_heard = ?"); values.push(how_heard || null);
+    updates.push("coach_id = ?"); values.push(coach_id || null);
 
-    // File fields: only update if a new file was provided
     if (req.files["material_bill"]) {
       updates.push("material_bill = ?");
       values.push(req.files["material_bill"][0].buffer);
@@ -191,12 +187,17 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-// ─── GET /api/teams/:id/details (unchanged) ──────────────────
+// ─── GET /api/teams/:id/details (updated for coach_id) ───────
 router.get("/:id/details", async (req, res) => {
   const teamId = req.params.id;
 
   try {
-    const [teamRows] = await db.execute("SELECT * FROM Team WHERE team_id = ?", [teamId]);
+    const [teamRows] = await db.execute(`
+      SELECT t.*, s.school_name
+      FROM Team t
+      LEFT JOIN School s ON t.school_id = s.school_id
+      WHERE t.team_id = ?
+    `, [teamId]);
     if (teamRows.length === 0) return res.status(404).json({ message: "Team not found." });
     const team = teamRows[0];
 
@@ -206,11 +207,21 @@ router.get("/:id/details", async (req, res) => {
       if (schoolRows.length) school = schoolRows[0];
     }
 
-    const [coaches] = await db.execute("SELECT * FROM Coach WHERE team_id = ?", [teamId]);
+    // Coach: now linked via team.coach_id (singular, not a list)
+    let coaches = [];
+    if (team.coach_id) {
+      const [coachRows] = await db.execute("SELECT * FROM Coach WHERE coach_id = ?", [team.coach_id]);
+      coaches = coachRows; // array with one item (or empty)
+    }
+
     const [students] = await db.execute(
-      "SELECT student_id, first_name, surname, date_of_birth, grade, role, shirt_size, dietary_requirements FROM Student WHERE team_id = ?",
+      `SELECT student_id, first_name, surname, date_of_birth, grade, role,
+              shirt_size, dietary_requirements
+       FROM Student
+       WHERE team_id = ?`,
       [teamId]
     );
+
     const [eventTeams] = await db.execute(
       "SELECT event_team_id, event_id, total_points, created_at FROM Event_Team WHERE team_id = ?",
       [teamId]
@@ -224,7 +235,6 @@ router.get("/:id/details", async (req, res) => {
 });
 
 // ─── GET /api/teams/:id/download/:field ──────────────────────
-// Optional endpoint to retrieve a specific file (blob) for download
 router.get("/:id/download/:field", async (req, res) => {
   const { id, field } = req.params;
   const allowed = ["material_bill", "engineering_plan", "project_report", "engineering_journal"];
@@ -247,4 +257,4 @@ router.get("/:id/download/:field", async (req, res) => {
   }
 });
 
-module.exports = router; 
+module.exports = router;

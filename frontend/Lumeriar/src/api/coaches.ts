@@ -19,27 +19,31 @@ export interface Coach {
     coach_id: number;
     first_name: string;
     surname: string;
-    email: string;
-    phone_no: string;
-    date_of_birth: string;
-    team_id: number;
+    email: string | null;
+    phone_no: string | null;
+    date_of_birth: string | null;
+    staff_number: string | null;
+    dietary_requirements: string | null;
+    shirt_size: string | null;
+    signed_integrity_declaration: string | null; // filename or flag; adjust as needed
+    school_id: number | null;
+    school_name?: string;          // joined from School table
     created_at: string;
-    team_name?: string;  // joined from Team
 }
 
 export interface CoachFilters {
     search?: string;
-    team_id?: string;
+    school_id?: string;            // filter by school
 }
 
 export interface CoachFilterOptions {
-    teams: { team_id: number; team_name: string }[];
+    schools: { school_id: number; school_name: string }[];
 }
 
 export async function fetchCoaches(filters: CoachFilters = {}): Promise<Coach[]> {
     const params = new URLSearchParams();
     if (filters.search) params.set("search", filters.search);
-    if (filters.team_id) params.set("team_id", filters.team_id);
+    if (filters.school_id) params.set("school_id", filters.school_id);
 
     const res = await fetch(`${API_BASE}/api/coaches?${params}`, { headers: authHeaders() });
     return handleResponse(res);
@@ -50,7 +54,8 @@ export async function fetchCoachFilterOptions(): Promise<CoachFilterOptions> {
     return handleResponse(res);
 }
 
-export async function createCoach(data: Omit<Coach, "coach_id" | "created_at" | "team_name">) {
+// Create: all fields except coach_id, created_at, school_name
+export async function createCoach(data: Omit<Coach, "coach_id" | "created_at" | "school_name">) {
     const res = await fetch(`${API_BASE}/api/coaches`, {
         method: "POST",
         headers: authHeaders(),
@@ -59,7 +64,8 @@ export async function createCoach(data: Omit<Coach, "coach_id" | "created_at" | 
     return handleResponse(res);
 }
 
-export async function updateCoach(id: number, data: Partial<Omit<Coach, "coach_id" | "created_at" | "team_name">>) {
+// Update: partial fields
+export async function updateCoach(id: number, data: Partial<Omit<Coach, "coach_id" | "created_at" | "school_name">>) {
     const res = await fetch(`${API_BASE}/api/coaches/${id}`, {
         method: "PUT",
         headers: authHeaders(),

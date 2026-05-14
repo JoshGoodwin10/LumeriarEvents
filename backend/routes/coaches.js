@@ -5,16 +5,16 @@ const authMiddleware = require("../middleware/auth");
 const router = express.Router();
 router.use(authMiddleware);
 
-// GET /api/coaches - with filters and join to Team for team_name
+// GET /api/coaches - with filters and join to School for school_name
 router.get("/", async (req, res) => {
     try {
-        const { search, team_id } = req.query;
+        const { search, school_id } = req.query;
         let query = `
-      SELECT Coach.*, Team.team_name
-      FROM Coach
-      LEFT JOIN Team ON Coach.team_id = Team.team_id
-      WHERE 1=1
-    `;
+            SELECT Coach.*, School.school_name
+            FROM Coach
+            LEFT JOIN School ON Coach.school_id = School.school_id
+            WHERE 1=1
+        `;
         const params = [];
 
         if (search) {
@@ -22,9 +22,9 @@ router.get("/", async (req, res) => {
             const like = `%${search}%`;
             params.push(like, like, like);
         }
-        if (team_id) {
-            query += " AND Coach.team_id = ?";
-            params.push(team_id);
+        if (school_id) {
+            query += " AND Coach.school_id = ?";
+            params.push(school_id);
         }
 
         query += " ORDER BY Coach.created_at DESC";
@@ -39,8 +39,8 @@ router.get("/", async (req, res) => {
 // GET /api/coaches/filter-options
 router.get("/filter-options", async (req, res) => {
     try {
-        const [teams] = await db.execute("SELECT team_id, team_name FROM Team ORDER BY team_name");
-        res.json({ teams });
+        const [schools] = await db.execute("SELECT school_id, school_name FROM School ORDER BY school_name");
+        res.json({ schools });
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Failed to fetch filter options." });
@@ -60,14 +60,32 @@ router.get("/:id", async (req, res) => {
 
 // POST /api/coaches
 router.post("/", async (req, res) => {
-    const { first_name, surname, email, phone_no, date_of_birth, team_id } = req.body;
-    if (!first_name || !surname) return res.status(400).json({ message: "First name and surname are required." });
+    const {
+        first_name, surname, email, phone_no, date_of_birth,
+        staff_number, dietary_requirements, shirt_size,
+        signed_integrity_declaration, school_id
+    } = req.body;
+    if (!first_name || !surname) {
+        return res.status(400).json({ message: "First name and surname are required." });
+    }
 
     try {
         const [result] = await db.execute(
-            `INSERT INTO Coach (first_name, surname, email, phone_no, date_of_birth, team_id)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-            [first_name, surname, email || null, phone_no || null, date_of_birth || null, team_id || null]
+            `INSERT INTO Coach 
+            (first_name, surname, email, phone_no, date_of_birth, 
+             staff_number, dietary_requirements, shirt_size, signed_integrity_declaration, school_id, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+            [
+                first_name, surname,
+                email || null,
+                phone_no || null,
+                date_of_birth || null,
+                staff_number || null,
+                dietary_requirements || null,
+                shirt_size || null,
+                signed_integrity_declaration || null,
+                school_id || null
+            ]
         );
         res.status(201).json({ message: "Coach created.", coach_id: result.insertId });
     } catch (err) {
@@ -78,12 +96,38 @@ router.post("/", async (req, res) => {
 
 // PUT /api/coaches/:id
 router.put("/:id", async (req, res) => {
-    const { first_name, surname, email, phone_no, date_of_birth, team_id } = req.body;
+    const {
+        first_name, surname, email, phone_no, date_of_birth,
+        staff_number, dietary_requirements, shirt_size,
+        signed_integrity_declaration, school_id
+    } = req.body;
     try {
         const [result] = await db.execute(
-            `UPDATE Coach SET first_name=?, surname=?, email=?, phone_no=?, date_of_birth=?, team_id=?
-       WHERE coach_id=?`,
-            [first_name, surname, email || null, phone_no || null, date_of_birth || null, team_id || null, req.params.id]
+            `UPDATE Coach SET 
+                first_name = ?,
+                surname = ?,
+                email = ?,
+                phone_no = ?,
+                date_of_birth = ?,
+                staff_number = ?,
+                dietary_requirements = ?,
+                shirt_size = ?,
+                signed_integrity_declaration = ?,
+                school_id = ?
+             WHERE coach_id = ?`,
+            [
+                first_name,
+                surname,
+                email || null,
+                phone_no || null,
+                date_of_birth || null,
+                staff_number || null,
+                dietary_requirements || null,
+                shirt_size || null,
+                signed_integrity_declaration || null,
+                school_id || null,
+                req.params.id
+            ]
         );
         if (result.affectedRows === 0) return res.status(404).json({ message: "Coach not found." });
         res.json({ message: "Coach updated." });
@@ -96,7 +140,7 @@ router.put("/:id", async (req, res) => {
 // DELETE /api/coaches/:id
 router.delete("/:id", async (req, res) => {
     try {
-        const [result] = await db.execute("DELETE FROM Coach WHERE coach_id=?", [req.params.id]);
+        const [result] = await db.execute("DELETE FROM Coach WHERE coach_id = ?", [req.params.id]);
         if (result.affectedRows === 0) return res.status(404).json({ message: "Coach not found." });
         res.json({ message: "Coach deleted." });
     } catch (err) {
