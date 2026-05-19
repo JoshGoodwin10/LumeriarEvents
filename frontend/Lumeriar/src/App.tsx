@@ -19,6 +19,7 @@ import Events from './pages/PublicPages/Events';
 import Leaderboards from './pages/PublicPages/Leaderboards';
 import Register from './pages/PublicPages/Register';
 import RequestDetail from './pages/Details/RequestDetail';
+import JudgeView from './pages/JudgeView/JudgeView';
 
 const HomePage = () => (
   <>
@@ -109,8 +110,9 @@ function App() {
             <Route path="/requests/:id" element={<RequestDetail />} />
             <Route path="/teams/:id" element={<TeamDetail />} />
             <Route path="/events/:id" element={<EventDetail />} />
+            <Route path="/judge/view" element={<JudgeView />} />
             {/* Catch‑all inside private area: redirect to dashboard */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            {/* <Route path="*" element={<Navigate to="/dashboard" replace />} /> */}
           </Route>
 
           {/* Optional: catch‑all for non‑private routes (e.g., 404 page) */}

@@ -65,7 +65,7 @@ function ScoreModal({
         setSaving(true);
         setError("");
         try {
-            await saveScore(eventId, {
+            await saveScore({
                 event_team_id: eventTeamId,
                 round,
                 judge_id: form.judge_id,

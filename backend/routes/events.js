@@ -60,12 +60,10 @@ router.get("/:id", async (req, res) => {
 router.get("/:id/details", async (req, res) => {
     const eventId = req.params.id;
     try {
-        // 1. Event details
         const [eventRows] = await db.execute("SELECT * FROM Event WHERE event_id = ?", [eventId]);
         if (eventRows.length === 0) return res.status(404).json({ message: "Event not found." });
         const event = eventRows[0];
 
-        // 2. Teams in this event (from Event_Team)
         const [teams] = await db.execute(`
             SELECT 
                 et.event_team_id,
@@ -80,7 +78,6 @@ router.get("/:id/details", async (req, res) => {
             ORDER BY t.team_name
         `, [eventId]);
 
-        // 3. For each team, fetch scores (approved only)
         const teamsWithScores = await Promise.all(teams.map(async (team) => {
             const [scoreRows] = await db.execute(`
                 SELECT 
@@ -119,7 +116,6 @@ router.get("/:id/details", async (req, res) => {
                 };
             });
 
-            // Also fetch judges that ever scored this team (for display in UI, optional)
             const [judges] = await db.execute(`
                 SELECT DISTINCT j.judge_id, j.first_name, j.surname, j.email, j.role
                 FROM Score s
@@ -207,16 +203,16 @@ router.get("/:eventId/leaderboard", async (req, res) => {
 // ─── Protected routes (require authentication) ─────────────────
 router.use(authMiddleware);
 
-// POST /api/events
+// POST /api/events – with head_judge field
 router.post("/", async (req, res) => {
-    const { name, date, venue, start_time, end_time, registration_open, category } = req.body;
+    const { name, date, venue, start_time, end_time, registration_open, category, head_judge } = req.body;
     if (!name || !date) return res.status(400).json({ message: "Event name and date are required." });
     try {
         const [result] = await db.execute(
-            `INSERT INTO Event (name, date, venue, start_time, end_time, registration_open, category)
-             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO Event (name, date, venue, start_time, end_time, registration_open, category, head_judge)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
             [name, date, venue || null, start_time || null, end_time || null,
-                registration_open !== undefined ? registration_open : 1, category || null]
+                registration_open !== undefined ? registration_open : 1, category || null, head_judge || null]
         );
         res.status(201).json({ message: "Event created.", event_id: result.insertId });
     } catch (err) {
@@ -225,16 +221,16 @@ router.post("/", async (req, res) => {
     }
 });
 
-// PUT /api/events/:id
+// PUT /api/events/:id – with head_judge field
 router.put("/:id", async (req, res) => {
-    const { name, date, venue, start_time, end_time, registration_open, category } = req.body;
+    const { name, date, venue, start_time, end_time, registration_open, category, head_judge } = req.body;
     if (!name || !date) return res.status(400).json({ message: "Event name and date are required." });
     try {
         const [result] = await db.execute(
-            `UPDATE Event SET name=?, date=?, venue=?, start_time=?, end_time=?, registration_open=?, category=?
+            `UPDATE Event SET name=?, date=?, venue=?, start_time=?, end_time=?, registration_open=?, category=?, head_judge=?
              WHERE event_id=?`,
             [name, date, venue || null, start_time || null, end_time || null,
-                registration_open !== undefined ? registration_open : 1, category || null, req.params.id]
+                registration_open !== undefined ? registration_open : 1, category || null, head_judge || null, req.params.id]
         );
         if (result.affectedRows === 0) return res.status(404).json({ message: "Event not found." });
         res.json({ message: "Event updated." });
@@ -244,7 +240,7 @@ router.put("/:id", async (req, res) => {
     }
 });
 
-// DELETE /api/events/:id
+// DELETE /api/events/:id (unchanged)
 router.delete("/:id", async (req, res) => {
     try {
         const [result] = await db.execute("DELETE FROM Event WHERE event_id=?", [req.params.id]);

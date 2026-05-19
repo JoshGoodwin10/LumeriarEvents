@@ -115,4 +115,84 @@ router.delete("/:id", async (req, res) => {
     }
 });
 
+// ─── New endpoints for judge view ─────────────────────────────
+// GET /api/judges/:id/events-as-head
+// Returns events where this judge is the head judge
+router.get("/:id/events-as-head", async (req, res) => {
+    const judgeId = parseInt(req.params.id);
+    const currentUser = req.user; // from auth middleware: { userId, role, ... }
+
+    // Authorization: admin can view any judge; judge can only view own data
+    if (currentUser.role !== 'admin' && currentUser.userId !== judgeId) {
+        return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    try {
+        const [rows] = await db.execute(`
+            SELECT e.*
+            FROM Event e
+            WHERE e.head_judge = ?
+            ORDER BY e.date DESC
+        `, [judgeId]);
+        res.json(rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Failed to fetch events." });
+    }
+});
+
+// GET /api/judges/:id/teams-to-score
+// Returns distinct teams (with event details) for which this judge has recorded scores (approved or pending)
+router.get("/:id/teams-to-score", async (req, res) => {
+    const judgeId = parseInt(req.params.id);
+    const currentUser = req.user;
+
+    if (currentUser.role !== 'admin' && currentUser.userId !== judgeId) {
+        return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    try {
+        const [rows] = await db.execute(`
+            SELECT DISTINCT
+                t.team_id,
+                t.team_name,
+                e.event_id,
+                e.name AS event_name,
+                e.date AS event_date,
+                s.round,
+                s.is_approved,
+                s.score_id
+            FROM Score s
+            JOIN Event_Team et ON s.event_team_id = et.event_team_id
+            JOIN Team t ON et.team_id = t.team_id
+            JOIN Event e ON et.event_id = e.event_id
+            WHERE s.judge_id = ?
+            ORDER BY e.date DESC, t.team_name
+        `, [judgeId]);
+
+        // Group by team+event to avoid duplicate rows if multiple rounds exist
+        const grouped = {};
+        for (const row of rows) {
+            const key = `${row.event_id}-${row.team_id}`;
+            if (!grouped[key]) {
+                grouped[key] = {
+                    team_id: row.team_id,
+                    team_name: row.team_name,
+                    event_id: row.event_id,
+                    event_name: row.event_name,
+                    event_date: row.event_date,
+                    rounds: [],
+                    has_approved: false,
+                };
+            }
+            grouped[key].rounds.push({ round: row.round, approved: row.is_approved === 1 });
+            if (row.is_approved) grouped[key].has_approved = true;
+        }
+        res.json(Object.values(grouped));
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Failed to fetch teams." });
+    }
+});
+
 module.exports = router;

@@ -1,18 +1,9 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-/**
- * Wrap any route you want to protect:
- *
- *   <Route element={<PrivateRoute />}>
- *     <Route path="/dashboard" element={<Dashboard />} />
- *     <Route path="/profile"   element={<Profile />} />
- *   </Route>
- */
 export default function PrivateRoute() {
   const { isAuthenticated, isLoading } = useAuth();
   if (isLoading) {
-    // Avoid a flash-redirect while localStorage is being read
     return (
       <div style={{
         minHeight: "100vh",

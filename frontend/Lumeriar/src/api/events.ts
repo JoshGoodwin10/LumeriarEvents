@@ -28,6 +28,7 @@ export interface Event {
     end_time: string | null;
     registration_open: boolean;
     category: string | null;
+    head_judge: number | null;
     created_at: string;
     team_count?: number;
 }
