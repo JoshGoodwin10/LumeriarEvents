@@ -11,16 +11,16 @@ router.get("/event/:eventId", async (req, res) => {
     const { eventId } = req.params;
     try {
         const [scores] = await db.execute(`
-      SELECT s.*, 
-             t.team_id, t.team_name,
-             j.first_name AS judge_first, j.surname AS judge_surname
-      FROM Score s
-      JOIN Event_Team et ON s.event_team_id = et.event_team_id
-      JOIN Team t ON et.team_id = t.team_id
-      JOIN Judge j ON s.judge_id = j.judge_id
-      WHERE et.event_id = ?
-      ORDER BY t.team_name, s.round
-    `, [eventId]);
+            SELECT s.*, 
+                   t.team_id, t.team_name,
+                   j.first_name AS judge_first, j.surname AS judge_surname
+            FROM Score s
+            JOIN Event_Team et ON s.event_team_id = et.event_team_id
+            JOIN Team t ON et.team_id = t.team_id
+            JOIN Judge j ON s.judge_id = j.judge_id
+            WHERE et.event_id = ?
+            ORDER BY t.team_name, s.round
+        `, [eventId]);
         res.json(scores);
     } catch (err) {
         console.error(err);
@@ -28,16 +28,16 @@ router.get("/event/:eventId", async (req, res) => {
     }
 });
 
+// POST /api/scores/:eventId/scores – old route (kept for compatibility)
 router.post("/:eventId/scores", async (req, res) => {
     const { eventId } = req.params;
-    const { team_id, round, judge_id, technical_score, innovation_design_score, theme_score, real_world_score, teamwork_score, reason_change } = req.body;
+    const { team_id, round, judge_id, technical_score, innovation_design_score, theme_score, real_world_score, teamwork_score, change_reason } = req.body;
 
     if (!team_id || !round || !judge_id) {
         return res.status(400).json({ message: "team_id, round, and judge_id are required." });
     }
 
     try {
-        // Find event_team_id
         const [etRows] = await db.execute(
             "SELECT event_team_id FROM Event_Team WHERE event_id = ? AND team_id = ?",
             [eventId, team_id]
@@ -47,66 +47,55 @@ router.post("/:eventId/scores", async (req, res) => {
         }
         const event_team_id = etRows[0].event_team_id;
 
-        // Check if score exists for this (event_team_id, round, judge_id)
         const [existing] = await db.execute(
             "SELECT * FROM Score WHERE event_team_id = ? AND round = ? AND judge_id = ?",
             [event_team_id, round, judge_id]
         );
 
         if (existing.length === 0) {
-            // Insert new score
             const [result] = await db.execute(`
-        INSERT INTO Score 
-        (event_team_id, round, judge_id, technical_score, innovation_design_score, theme_score, real_world_score, teamwork_score)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `, [event_team_id, round, judge_id, technical_score, innovation_design_score, theme_score, real_world_score, teamwork_score]);
+                INSERT INTO Score 
+                (event_team_id, round, judge_id, technical_score, innovation_design_score, theme_score, real_world_score, teamwork_score)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `, [event_team_id, round, judge_id, technical_score, innovation_design_score, theme_score, real_world_score, teamwork_score]);
             const newScoreId = result.insertId;
 
-            // Log initial creation in history
             await db.execute(`
-        INSERT INTO Score_History (score_id, judge_id, reason_change, 
-          new_technical_score, new_innovation_design_score, new_theme_score, new_real_world_score, new_teamwork_score)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `, [newScoreId, judge_id, reason_change || "Initial score",
+                INSERT INTO Score_History (score_id, judge_id, change_reason, 
+                    new_technical_score, new_innovation_design_score, new_theme_score, new_real_world_score, new_teamwork_score)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `, [newScoreId, judge_id, change_reason || "Initial score",
                 technical_score, innovation_design_score, theme_score, real_world_score, teamwork_score]);
         } else {
-            // Update existing score
             const old = existing[0];
             await db.execute(`
-        UPDATE Score SET
-          technical_score = ?,
-          innovation_design_score = ?,
-          theme_score = ?,
-          real_world_score = ?,
-          teamwork_score = ?
-        WHERE score_id = ?
-      `, [technical_score, innovation_design_score, theme_score, real_world_score, teamwork_score, old.score_id]);
+                UPDATE Score SET
+                    technical_score = ?,
+                    innovation_design_score = ?,
+                    theme_score = ?,
+                    real_world_score = ?,
+                    teamwork_score = ?
+                WHERE score_id = ?
+            `, [technical_score, innovation_design_score, theme_score, real_world_score, teamwork_score, old.score_id]);
 
-            // Log changes only for fields that changed
             const changes = [];
-            const params = [old.score_id, judge_id, reason_change || "Score updated"];
-            const updateFields = (oldVal, newVal, fieldName) => {
-                if (oldVal !== newVal) {
-                    changes.push(`${fieldName}: ${oldVal} -> ${newVal}`);
-                }
-            };
-            updateFields(old.technical_score, technical_score, 'technical_score');
-            updateFields(old.innovation_design_score, innovation_design_score, 'innovation_design_score');
-            updateFields(old.theme_score, theme_score, 'theme_score');
-            updateFields(old.real_world_score, real_world_score, 'real_world_score');
-            updateFields(old.teamwork_score, teamwork_score, 'teamwork_score');
+            if (old.technical_score !== technical_score) changes.push(`technical_score: ${old.technical_score} -> ${technical_score}`);
+            if (old.innovation_design_score !== innovation_design_score) changes.push(`innovation_design_score: ${old.innovation_design_score} -> ${innovation_design_score}`);
+            if (old.theme_score !== theme_score) changes.push(`theme_score: ${old.theme_score} -> ${theme_score}`);
+            if (old.real_world_score !== real_world_score) changes.push(`real_world_score: ${old.real_world_score} -> ${real_world_score}`);
+            if (old.teamwork_score !== teamwork_score) changes.push(`teamwork_score: ${old.teamwork_score} -> ${teamwork_score}`);
 
             if (changes.length > 0) {
                 await db.execute(`
-          INSERT INTO Score_History 
-          (score_id, judge_id, reason_change,
-           old_technical_score, new_technical_score,
-           old_innovation_design_score, new_innovation_design_score,
-           old_theme_score, new_theme_score,
-           old_real_world_score, new_real_world_score,
-           old_teamwork_score, new_teamwork_score)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `, [old.score_id, judge_id, reason_change || changes.join('; '),
+                    INSERT INTO Score_History 
+                    (score_id, judge_id, change_reason,
+                     old_technical_score, new_technical_score,
+                     old_innovation_design_score, new_innovation_design_score,
+                     old_theme_score, new_theme_score,
+                     old_real_world_score, new_real_world_score,
+                     old_teamwork_score, new_teamwork_score)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                `, [old.score_id, judge_id, change_reason || changes.join('; '),
                 old.technical_score, technical_score,
                 old.innovation_design_score, innovation_design_score,
                 old.theme_score, theme_score,
@@ -115,9 +104,7 @@ router.post("/:eventId/scores", async (req, res) => {
             }
         }
 
-        // After updating scores, recalculate total_points for this event_team (sum of all approved scores' totals)
         await recalcTeamTotalPoints(event_team_id);
-
         res.json({ message: "Score saved successfully." });
     } catch (err) {
         console.error(err);
@@ -128,21 +115,22 @@ router.post("/:eventId/scores", async (req, res) => {
 // Helper: recalc total_points for an event_team
 async function recalcTeamTotalPoints(event_team_id) {
     const [rows] = await db.execute(`
-    SELECT SUM(
-      COALESCE(technical_score,0) + 
-      COALESCE(innovation_design_score,0) + 
-      COALESCE(theme_score,0) + 
-      COALESCE(real_world_score,0) + 
-      COALESCE(teamwork_score,0)
-    ) AS total
-    FROM Score
-    WHERE event_team_id = ? AND is_approved = TRUE
-  `, [event_team_id]);
+        SELECT SUM(
+            COALESCE(technical_score,0) + 
+            COALESCE(innovation_design_score,0) + 
+            COALESCE(theme_score,0) + 
+            COALESCE(real_world_score,0) + 
+            COALESCE(teamwork_score,0)
+        ) AS total
+        FROM Score
+        WHERE event_team_id = ? AND is_approved = TRUE
+    `, [event_team_id]);
     const total = rows[0].total || 0;
     await db.execute("UPDATE Event_Team SET total_points = ? WHERE event_team_id = ?", [total, event_team_id]);
 }
 
-router.put("/scores/:scoreId/approve", async (req, res) => {
+// PUT /api/scores/:scoreId/approve – corrected path (removed extra /scores)
+router.put("/:scoreId/approve", async (req, res) => {
     const { scoreId } = req.params;
     try {
         const [score] = await db.execute("SELECT event_team_id FROM Score WHERE score_id = ?", [scoreId]);
@@ -156,20 +144,147 @@ router.put("/scores/:scoreId/approve", async (req, res) => {
     }
 });
 
-router.get("/scores/:scoreId/history", async (req, res) => {
+// GET /api/scores/:scoreId/history – corrected path (removed extra /scores)
+router.get("/:scoreId/history", async (req, res) => {
     const { scoreId } = req.params;
     try {
         const [history] = await db.execute(`
-      SELECT h.*, j.first_name, j.surname
-      FROM Score_History h
-      JOIN Judge j ON h.judge_id = j.judge_id
-      WHERE h.score_id = ?
-      ORDER BY h.change_date DESC
-    `, [scoreId]);
+            SELECT h.*, j.first_name, j.surname
+            FROM Score_History h
+            JOIN Judge j ON h.judge_id = j.judge_id
+            WHERE h.score_id = ?
+            ORDER BY h.change_date DESC
+        `, [scoreId]);
         res.json(history);
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Failed to fetch history." });
+    }
+});
+
+// PUT /api/scores/assign-team-judge
+router.put('/assign-team-judge', authMiddleware, async (req, res) => {
+    const { event_team_id, judge_id } = req.body;
+    if (!event_team_id || !judge_id) {
+        return res.status(400).json({ message: 'event_team_id and judge_id are required.' });
+    }
+    try {
+        const [judgeRows] = await db.execute('SELECT judge_id FROM Judge WHERE judge_id = ?', [judge_id]);
+        if (judgeRows.length === 0) {
+            return res.status(404).json({ message: 'Judge not found.' });
+        }
+        await db.execute(
+            'UPDATE Score SET judge_id = ? WHERE event_team_id = ?',
+            [judge_id, event_team_id]
+        );
+        res.json({ message: 'Judge assigned to team for all rounds.' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Failed to assign judge.' });
+    }
+});
+
+// POST /api/scores - create/update a score using event_team_id (main endpoint)
+router.post("/", async (req, res) => {
+    const {
+        event_team_id,
+        round,
+        judge_id,
+        technical_score,
+        innovation_design_score,
+        theme_score,
+        real_world_score,
+        teamwork_score,
+        change_reason   // matches database column name
+    } = req.body;
+
+    if (!event_team_id || !round || !judge_id) {
+        return res.status(400).json({ message: "event_team_id, round, and judge_id are required." });
+    }
+
+    try {
+        const [existing] = await db.execute(
+            "SELECT * FROM Score WHERE event_team_id = ? AND round = ? AND judge_id = ?",
+            [event_team_id, round, judge_id]
+        );
+
+        if (existing.length === 0) {
+            // Insert new score
+            const [result] = await db.execute(`
+                INSERT INTO Score 
+                (event_team_id, round, judge_id, technical_score, innovation_design_score, 
+                 theme_score, real_world_score, teamwork_score, is_approved)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
+            `, [event_team_id, round, judge_id, technical_score || null, innovation_design_score || null,
+                theme_score || null, real_world_score || null, teamwork_score || null]);
+            const newScoreId = result.insertId;
+
+            await db.execute(`
+                INSERT INTO Score_History 
+                (score_id, judge_id, change_reason, 
+                 new_technical_score, new_innovation_design_score, new_theme_score, 
+                 new_real_world_score, new_teamwork_score)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `, [newScoreId, judge_id, change_reason || "Initial score",
+                technical_score || null, innovation_design_score || null, theme_score || null,
+                real_world_score || null, teamwork_score || null]);
+        } else {
+            const old = existing[0];
+
+            const keepOld = (incoming, oldValue) => {
+                if (incoming !== undefined && incoming !== null && incoming !== '') {
+                    return incoming;
+                }
+                return oldValue;
+            };
+
+            const newTech = keepOld(technical_score, old.technical_score);
+            const newInnov = keepOld(innovation_design_score, old.innovation_design_score);
+            const newTheme = keepOld(theme_score, old.theme_score);
+            const newReal = keepOld(real_world_score, old.real_world_score);
+            const newTeam = keepOld(teamwork_score, old.teamwork_score);
+
+            await db.execute(`
+                UPDATE Score SET
+                    technical_score = ?,
+                    innovation_design_score = ?,
+                    theme_score = ?,
+                    real_world_score = ?,
+                    teamwork_score = ?
+                WHERE score_id = ?
+            `, [newTech, newInnov, newTheme, newReal, newTeam, old.score_id]);
+
+            const changes = [];
+            if (old.technical_score !== newTech) changes.push(`technical_score: ${old.technical_score} -> ${newTech}`);
+            if (old.innovation_design_score !== newInnov) changes.push(`innovation_design_score: ${old.innovation_design_score} -> ${newInnov}`);
+            if (old.theme_score !== newTheme) changes.push(`theme_score: ${old.theme_score} -> ${newTheme}`);
+            if (old.real_world_score !== newReal) changes.push(`real_world_score: ${old.real_world_score} -> ${newReal}`);
+            if (old.teamwork_score !== newTeam) changes.push(`teamwork_score: ${old.teamwork_score} -> ${newTeam}`);
+
+            if (changes.length > 0) {
+                await db.execute(`
+                    INSERT INTO Score_History 
+                    (score_id, judge_id, change_reason,
+                     old_technical_score, new_technical_score,
+                     old_innovation_design_score, new_innovation_design_score,
+                     old_theme_score, new_theme_score,
+                     old_real_world_score, new_real_world_score,
+                     old_teamwork_score, new_teamwork_score)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                `, [old.score_id, judge_id, change_reason || changes.join('; '),
+                old.technical_score, newTech,
+                old.innovation_design_score, newInnov,
+                old.theme_score, newTheme,
+                old.real_world_score, newReal,
+                old.teamwork_score, newTeam]);
+            }
+        }
+
+        await recalcTeamTotalPoints(event_team_id);
+        res.json({ message: "Score saved successfully." });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Failed to save score." });
     }
 });
 

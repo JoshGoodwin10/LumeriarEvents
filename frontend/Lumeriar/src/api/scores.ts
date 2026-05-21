@@ -44,7 +44,7 @@ export interface ScorePayload {
     theme_score?: number | null;
     real_world_score?: number | null;
     teamwork_score?: number | null;
-    reason_change?: string;
+    change_reason?: string;
 }
 
 // Fetch all scores for a given event (optional, if needed)
@@ -77,7 +77,7 @@ export interface ScoreHistory {
     change_date: string;
     first_name: string;
     surname: string;
-    reason_change: string;
+    change_reason: string;
     old_technical_score: number | null;
     new_technical_score: number | null;
     old_innovation_design_score: number | null;

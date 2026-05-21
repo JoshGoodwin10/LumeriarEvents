@@ -79,6 +79,7 @@ router.get("/:id/details", async (req, res) => {
         `, [eventId]);
 
         const teamsWithScores = await Promise.all(teams.map(async (team) => {
+            // ✅ FIX: removed "AND is_approved = 1" to show all scores (pending + approved)
             const [scoreRows] = await db.execute(`
                 SELECT 
                     score_id,
@@ -91,7 +92,7 @@ router.get("/:id/details", async (req, res) => {
                     judge_id,
                     is_approved
                 FROM Score
-                WHERE event_team_id = ? AND is_approved = 1
+                WHERE event_team_id = ?
                 ORDER BY round
             `, [team.event_team_id]);
 
@@ -111,8 +112,10 @@ router.get("/:id/details", async (req, res) => {
                         innovation_design: score.innovation_design_score,
                         theme: score.theme_score,
                         real_world: score.real_world_score,
-                        teamwork: score.teamwork_score
-                    }
+                        teamwork: score.teamwork_score,
+                    },
+                    score_id: score.score_id,
+                    is_approved: score.is_approved
                 };
             });
 

@@ -49,7 +49,7 @@ function ScoreModal({
         theme_score: existingScore?.theme_score ?? "",
         real_world_score: existingScore?.real_world_score ?? "",
         teamwork_score: existingScore?.teamwork_score ?? "",
-        reason_change: "",
+        change_reason: "",
     });
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
@@ -74,7 +74,7 @@ function ScoreModal({
                 theme_score: form.theme_score ? Number(form.theme_score) : null,
                 real_world_score: form.real_world_score ? Number(form.real_world_score) : null,
                 teamwork_score: form.teamwork_score ? Number(form.teamwork_score) : null,
-                reason_change: form.reason_change,
+                change_reason: form.change_reason,
             });
             onSaved();
         } catch (err: any) {
@@ -127,7 +127,7 @@ function ScoreModal({
                     </div>
                     <div className="tdm-field">
                         <label>Reason for change (optional)</label>
-                        <textarea rows={2} value={form.reason_change} onChange={(e) => setField("reason_change", e.target.value)} />
+                        <textarea rows={2} value={form.change_reason} onChange={(e) => setField("change_reason", e.target.value)} />
                     </div>
                     {error && <p className="tdm-error">{error}</p>}
                     <div className="tdm-actions">
@@ -162,7 +162,7 @@ function HistoryModal({ scoreId, onClose }: { scoreId: number; onClose: () => vo
                         {history.map((h) => (
                             <div key={h.history_id} className="history-item">
                                 <p><strong>{new Date(h.change_date).toLocaleString()}</strong> – {h.first_name} {h.surname}</p>
-                                <p><em>{h.reason_change}</em></p>
+                                <p><em>{h.change_reason}</em></p>
                                 <ul>
                                     {h.old_technical_score !== h.new_technical_score && <li>Technical: {h.old_technical_score ?? "—"} → {h.new_technical_score ?? "—"}</li>}
                                     {h.old_innovation_design_score !== h.new_innovation_design_score && <li>Innovation: {h.old_innovation_design_score ?? "—"} → {h.new_innovation_design_score ?? "—"}</li>}
@@ -181,6 +181,95 @@ function HistoryModal({ scoreId, onClose }: { scoreId: number; onClose: () => vo
 }
 
 // ─── Main Component ───────────────────────────────────────────
+// ─── Assign Judge Modal (Table version) ──────────────────────
+function AssignJudgeModal({
+    teamName,
+    eventTeamId,
+    allJudges,
+    onClose,
+    onAssigned,
+}: {
+    teamName: string;
+    eventTeamId: number;
+    allJudges: Judge[];
+    onClose: () => void;
+    onAssigned: () => void;
+}) {
+    const [assigning, setAssigning] = useState<number | null>(null);
+    const [error, setError] = useState("");
+
+    const handleAssign = async (judgeId: number) => {
+        setAssigning(judgeId);
+        setError("");
+        try {
+            const token = localStorage.getItem("token");
+            const res = await fetch(`/api/scores/assign-team-judge`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ event_team_id: eventTeamId, judge_id: judgeId }),
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.message || "Failed to assign judge");
+            }
+            onAssigned();
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setAssigning(null);
+        }
+    };
+
+    return createPortal(
+        <div className="tdm-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
+            <div className="tdm-box" style={{ width: "600px", maxWidth: "90vw" }}>
+                <div className="tdm-head">
+                    <h2 className="tdm-title">Assign Judge to Team: {teamName}</h2>
+                    <button className="tdm-close" onClick={onClose}>×</button>
+                </div>
+                <div style={{ maxHeight: "60vh", overflowY: "auto" }}>
+                    <table className="td-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>School</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {allJudges.map((judge) => (
+                                <tr key={judge.judge_id}>
+                                    <td>{judge.first_name} {judge.surname}</td>
+                                    <td>{judge.school_name || "—"}</td>
+                                    <td>
+                                        <button
+                                            className="btn-primary"
+                                            onClick={() => handleAssign(judge.judge_id)}
+                                            disabled={assigning === judge.judge_id}
+                                            style={{ padding: "4px 12px", fontSize: "0.8rem" }}
+                                        >
+                                            {assigning === judge.judge_id ? <span className="spinner-sm" /> : "Assign"}
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+                {error && <p className="tdm-error" style={{ marginTop: "1rem" }}>{error}</p>}
+                <div className="tdm-actions">
+                    <button className="btn-secondary" onClick={onClose}>Cancel</button>
+                </div>
+            </div>
+        </div>,
+        document.body
+    );
+}
+
+// ─── Main Component (updated) ─────────────────────────────────
 export default function EventDetail() {
     const { id } = useParams<{ id: string }>();
     const [event, setEvent] = useState<{ name: string; date: string; category: string | null } | null>(null);
@@ -188,19 +277,9 @@ export default function EventDetail() {
     const [allJudges, setAllJudges] = useState<Judge[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-    const [editingScore, setEditingScore] = useState<{
-        event_team_id: number;
-        team_name: string;
-        round: number;
-        score_id?: number;
-        technical_score?: number | null;
-        innovation_design_score?: number | null;
-        theme_score?: number | null;
-        real_world_score?: number | null;
-        teamwork_score?: number | null;
-        judge_id?: number;
-    } | null>(null);
+    const [editingScore, setEditingScore] = useState<any>(null);
     const [viewingHistory, setViewingHistory] = useState<number | null>(null);
+    const [assigningJudge, setAssigningJudge] = useState<{ event_team_id: number; team_name: string } | null>(null);
 
     const loadData = async () => {
         if (!id) return;
@@ -247,12 +326,17 @@ export default function EventDetail() {
                 <Link to="/events" className="btn-secondary">← Back to Events</Link>
             </div>
 
-            {/* Teams summary (no judge assignment) */}
+            {/* Teams summary (with Assign Judge button) */}
             <div className="detail-card">
                 <h3>Teams</h3>
                 <table className="td-table">
                     <thead>
-                        <tr><th>Team</th><th>Category</th><th>Total Points</th></tr>
+                        <tr>
+                            <th>Team</th>
+                            <th>Category</th>
+                            <th>Total Points</th>
+                            <th>Actions</th>
+                        </tr>
                     </thead>
                     <tbody>
                         {teams.map((team) => (
@@ -260,13 +344,22 @@ export default function EventDetail() {
                                 <td className="td-name">{team.team_name}</td>
                                 <td>{team.category}</td>
                                 <td className="td-points"><strong>{team.scores.overall_total}</strong></td>
+                                <td>
+                                    <button
+                                        className="btn-icon assign-judge"
+                                        onClick={() => setAssigningJudge({ event_team_id: team.event_team_id, team_name: team.team_name })}
+                                        title="Assign Judge to Team"
+                                    >
+                                        👨‍⚖️
+                                    </button>
+                                </td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
             </div>
 
-            {/* Score Cards per team */}
+            {/* Score Cards per team (unchanged) */}
             <div className="detail-card">
                 <h3>Score Cards</h3>
                 {teams.map((team) => {
@@ -285,10 +378,6 @@ export default function EventDetail() {
                                     {rounds.map((roundScore) => {
                                         const b = roundScore.breakdown;
                                         const total = roundScore.total;
-                                        // For edit we need score_id and judge_id; currently not stored in roundScore.
-                                        // This demo assumes we re‑fetch or store them in a separate map.
-                                        // For full edit capability, you would expand the backend to return these fields.
-                                        // Here we show only existing scores, and allow new rounds.
                                         return (
                                             <tr key={team.event_team_id + "_" + roundScore.round}>
                                                 <td>{roundScore.round}</td>
@@ -299,9 +388,7 @@ export default function EventDetail() {
                                                 <td>{b.teamwork ?? "—"}</td>
                                                 <td><strong>{total}</strong></td>
                                                 <td>—</td>
-                                                <td>
-                                                    {/* We need score_id from backend to edit/approve – omitted for simplicity */}
-                                                </td>
+                                                <td>{/* edit/approve per score */}</td>
                                             </tr>
                                         );
                                     })}
@@ -350,12 +437,22 @@ export default function EventDetail() {
                 />
             )}
             {viewingHistory && <HistoryModal scoreId={viewingHistory} onClose={() => setViewingHistory(null)} />}
+            {assigningJudge && (
+                <AssignJudgeModal
+                    teamName={assigningJudge.team_name}
+                    eventTeamId={assigningJudge.event_team_id}
+                    allJudges={allJudges}
+                    onClose={() => setAssigningJudge(null)}
+                    onAssigned={() => { setAssigningJudge(null); loadData(); }}
+                />
+            )}
 
             <style>{`
                 .team-score-section { margin-bottom: 32px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; }
                 .team-score-section h4 { font-family: 'Syne', sans-serif; margin-bottom: 12px; color: #f1f5f9; }
                 .td-points { font-weight: 700; color: #60a5fa; }
                 .btn-primary { background: #f39c12; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; }
+                .btn-icon.assign-judge { background: none; border: none; font-size: 1.2rem; cursor: pointer; }
                 .spinner-sm { display: inline-block; width: 12px; height: 12px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; }
                 @keyframes spin { to { transform: rotate(360deg); } }
                 .history-item { border-bottom: 1px solid rgba(255,255,255,0.1); padding: 12px 0; }
