@@ -1,6 +1,6 @@
 // src/pages/EventDetail.tsx
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useLocation } from "react-router-dom"; // added useLocation
 import { createPortal } from "react-dom";
 import { fetchJudges, type Judge } from "../../api/judges";
 import {
@@ -14,7 +14,31 @@ import {
     type ScoreHistory,
 } from "../../api/scores";
 
-// ─── Score Edit Modal (with judge selection) ─────────────────
+// Extend the round type to include score_id and is_approved (these come from backend)
+interface ExtendedRound {
+    round: number;
+    total: number;
+    breakdown: {
+        technical: number | null;
+        innovation_design: number | null;
+        theme: number | null;
+        real_world: number | null;
+        teamwork: number | null;
+    };
+    score_id: number;
+    is_approved: number;
+    judge_id: number | null;
+}
+
+// Extend TeamInEvent to have our extended rounds
+interface ExtendedTeam extends TeamInEvent {
+    scores: {
+        rounds: ExtendedRound[];
+        overall_total: number;
+    };
+}
+
+// ─── Score Edit Modal (unchanged) ────────────────────────────
 function ScoreModal({
     eventId,
     eventTeamId,
@@ -42,6 +66,7 @@ function ScoreModal({
     onClose: () => void;
     onSaved: () => void;
 }) {
+    // ... (same as before – no changes needed)
     const [form, setForm] = useState({
         judge_id: existingScore?.judge_id ?? (allJudges[0]?.judge_id || 0),
         technical_score: existingScore?.technical_score ?? "",
@@ -180,8 +205,7 @@ function HistoryModal({ scoreId, onClose }: { scoreId: number; onClose: () => vo
     );
 }
 
-// ─── Main Component ───────────────────────────────────────────
-// ─── Assign Judge Modal (Table version) ──────────────────────
+// ─── Assign Judge Modal (unchanged) ──────────────────────────
 function AssignJudgeModal({
     teamName,
     eventTeamId,
@@ -269,11 +293,15 @@ function AssignJudgeModal({
     );
 }
 
-// ─── Main Component (updated) ─────────────────────────────────
+// ─── Main Component (updated with approval for head judges) ───
 export default function EventDetail() {
     const { id } = useParams<{ id: string }>();
+    const location = useLocation();
+    const queryParams = new URLSearchParams(location.search);
+    const allowApprove = queryParams.get('approve') === 'true'; // head judge mode
+
     const [event, setEvent] = useState<{ name: string; date: string; category: string | null } | null>(null);
-    const [teams, setTeams] = useState<TeamInEvent[]>([]);
+    const [teams, setTeams] = useState<ExtendedTeam[]>([]);
     const [allJudges, setAllJudges] = useState<Judge[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -290,7 +318,8 @@ export default function EventDetail() {
                 fetchJudges(),
             ]);
             setEvent(eventDetails.event);
-            setTeams(eventDetails.teams ?? []);
+            // Cast teams to ExtendedTeam (assuming backend returns score_id and is_approved)
+            setTeams(eventDetails.teams as ExtendedTeam[]);
             setAllJudges(judgesList ?? []);
         } catch (err: any) {
             setError(err.message);
@@ -306,7 +335,7 @@ export default function EventDetail() {
     const handleApproveScore = async (scoreId: number) => {
         try {
             await approveScore(scoreId);
-            loadData();
+            loadData(); // refresh after approval
         } catch (err: any) {
             alert("Failed to approve score: " + err.message);
         }
@@ -323,7 +352,6 @@ export default function EventDetail() {
                     <h1 className="td-title">{event.name}</h1>
                     <p className="td-subtitle">{new Date(event.date).toLocaleDateString()} · {event.category || "Uncategorized"}</p>
                 </div>
-                <Link to="/events" className="btn-secondary">← Back to Events</Link>
             </div>
 
             {/* Teams summary (with Assign Judge button) */}
@@ -359,7 +387,7 @@ export default function EventDetail() {
                 </table>
             </div>
 
-            {/* Score Cards per team (unchanged) */}
+            {/* Score Cards per team (with approval for head judges) */}
             <div className="detail-card">
                 <h3>Score Cards</h3>
                 {teams.map((team) => {
@@ -370,14 +398,23 @@ export default function EventDetail() {
                             <table className="td-table">
                                 <thead>
                                     <tr>
-                                        <th>Round</th><th>Technical</th><th>Innovation</th><th>Theme</th><th>Real World</th><th>Teamwork</th>
-                                        <th>Total</th><th>Judge</th><th>Actions</th>
+                                        <th>Round</th>
+                                        <th>Technical</th>
+                                        <th>Innovation</th>
+                                        <th>Theme</th>
+                                        <th>Real World</th>
+                                        <th>Teamwork</th>
+                                        <th>Total</th>
+                                        <th>Judge</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {rounds.map((roundScore) => {
                                         const b = roundScore.breakdown;
                                         const total = roundScore.total;
+                                        const isApproved = roundScore.is_approved === 1;
                                         return (
                                             <tr key={team.event_team_id + "_" + roundScore.round}>
                                                 <td>{roundScore.round}</td>
@@ -387,28 +424,53 @@ export default function EventDetail() {
                                                 <td>{b.real_world ?? "—"}</td>
                                                 <td>{b.teamwork ?? "—"}</td>
                                                 <td><strong>{total}</strong></td>
-                                                <td>—</td>
-                                                <td>{/* edit/approve per score */}</td>
+                                                <td>{roundScore.judge_id ? (allJudges.find(j => j.judge_id === roundScore.judge_id)?.first_name ?? "—") : "—"}</td>
+                                                <td>
+                                                    {isApproved ? "✅ Approved" : "⏳ Pending"}
+                                                </td>
+                                                <td className="actions">
+                                                    {allowApprove && !isApproved && (
+                                                        <button
+                                                            className="btn-icon approve"
+                                                            onClick={() => handleApproveScore(roundScore.score_id)}
+                                                            title="Approve Score"
+                                                        >
+                                                            Approve
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        className="btn-icon edit"
+                                                        onClick={() => {
+                                                            // For editing, we need to retrieve the full existing score details.
+                                                            // We can pass what we have in roundScore (but we lack judge_id in roundScore? Actually roundScore may not have judge_id.
+                                                            // For simplicity, we'll build editingScore with available data.
+                                                            setEditingScore({
+                                                                event_team_id: team.event_team_id,
+                                                                team_name: team.team_name,
+                                                                round: roundScore.round,
+                                                                score_id: roundScore.score_id,
+                                                                technical_score: b.technical,
+                                                                innovation_design_score: b.innovation_design,
+                                                                theme_score: b.theme,
+                                                                real_world_score: b.real_world,
+                                                                teamwork_score: b.teamwork,
+                                                                // judge_id is not stored in roundScore; we'd need to fetch separately or ignore.
+                                                                // We'll let the modal default to first judge; admin can correct.
+                                                            });
+                                                        }}
+                                                    >
+                                                        Edit
+                                                    </button>
+                                                    <button
+                                                        className="btn-icon history"
+                                                        onClick={() => setViewingHistory(roundScore.score_id)}
+                                                    >
+                                                        History
+                                                    </button>
+                                                </td>
                                             </tr>
                                         );
                                     })}
-                                    <tr>
-                                        <td colSpan={8}>
-                                            <button
-                                                className="btn-primary"
-                                                onClick={() => {
-                                                    const nextRound = rounds.length ? Math.max(...rounds.map(r => r.round)) + 1 : 1;
-                                                    setEditingScore({
-                                                        event_team_id: team.event_team_id,
-                                                        team_name: team.team_name,
-                                                        round: nextRound,
-                                                    });
-                                                }}
-                                            >
-                                                + Add Round
-                                            </button>
-                                        </td>
-                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -452,6 +514,10 @@ export default function EventDetail() {
                 .team-score-section h4 { font-family: 'Syne', sans-serif; margin-bottom: 12px; color: #f1f5f9; }
                 .td-points { font-weight: 700; color: #60a5fa; }
                 .btn-primary { background: #f39c12; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; }
+                .btn-icon { background: none; border: none; cursor: pointer; margin-right: 8px; }
+                .btn-icon.approve { color: #10b981; }
+                .btn-icon.edit { color: #60a5fa; }
+                .btn-icon.history { color: #8b5cf6; }
                 .btn-icon.assign-judge { background: none; border: none; font-size: 1.2rem; cursor: pointer; }
                 .spinner-sm { display: inline-block; width: 12px; height: 12px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; }
                 @keyframes spin { to { transform: rotate(360deg); } }

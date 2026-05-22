@@ -17,12 +17,14 @@ import { Link } from "react-router-dom";
 const emptyForm = (): Omit<Event, "event_id" | "created_at"> => ({
     name: "",
     date: "",
+    rounds: 1,               // default 1 round
     venue: "",
     start_time: "09:00:00",
     end_time: "17:00:00",
     registration_open: true,
     category: "",
     team_count: 0,
+    head_judge: null,
 });
 
 // ─── Event Modal ──────────────────────────────────────────────
@@ -77,6 +79,8 @@ function EventModal({ event, onClose, onSaved }: {
                 registration_open: form.registration_open,
                 category: form.category,
                 team_count: form.team_count,
+                rounds: form.rounds,
+                head_judge: form.head_judge,
             };
             if (isEdit) {
                 await updateEvent(event.event_id, payload);
@@ -128,6 +132,13 @@ function EventModal({ event, onClose, onSaved }: {
                             <label className="tdm-label">Category</label>
                             <input className="tdm-input" value={form.category ?? ""} onChange={e => set("category", e.target.value)} placeholder="Robotics" />
                         </div>
+                        <div className="tdm-field">
+                            <label className="tdm-label">Number of Rounds *</label>
+                            <input type="number" min="1" max="20" className="tdm-input"
+                                value={form.rounds} onChange={e => set("rounds", parseInt(e.target.value) || 1)} />
+                        </div>
+                    </div>
+                    <div className="tdm-row">
                         <div className="tdm-field">
                             <label className="tdm-label" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                                 <input type="checkbox" checked={form.registration_open} onChange={e => set("registration_open", e.target.checked)} />
@@ -265,6 +276,7 @@ export default function EventsDashboard() {
                                 <th>Event Name</th>
                                 <th>Date</th>
                                 <th>Venue</th>
+                                <th>Rounds</th>
                                 <th>Time</th>
                                 <th>Category</th>
                                 <th>Registration</th>
@@ -283,6 +295,7 @@ export default function EventsDashboard() {
                                     </td>
                                     <td>{new Date(event.date).toLocaleDateString()}</td>
                                     <td>{event.venue ?? <span className="td-null">—</span>}</td>
+                                    <td>{event.rounds}</td>
                                     <td className="td-time">
                                         {event.start_time?.slice(0, 5)} – {event.end_time?.slice(0, 5)}
                                     </td>

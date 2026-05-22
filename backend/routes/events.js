@@ -79,7 +79,6 @@ router.get("/:id/details", async (req, res) => {
         `, [eventId]);
 
         const teamsWithScores = await Promise.all(teams.map(async (team) => {
-            // ✅ FIX: removed "AND is_approved = 1" to show all scores (pending + approved)
             const [scoreRows] = await db.execute(`
                 SELECT 
                     score_id,
@@ -115,7 +114,8 @@ router.get("/:id/details", async (req, res) => {
                         teamwork: score.teamwork_score,
                     },
                     score_id: score.score_id,
-                    is_approved: score.is_approved
+                    is_approved: score.is_approved,
+                    judge_id: score.judge_id,
                 };
             });
 
@@ -206,15 +206,15 @@ router.get("/:eventId/leaderboard", async (req, res) => {
 // ─── Protected routes (require authentication) ─────────────────
 router.use(authMiddleware);
 
-// POST /api/events – with head_judge field
+// POST /api/events – with rounds and head_judge fields
 router.post("/", async (req, res) => {
-    const { name, date, venue, start_time, end_time, registration_open, category, head_judge } = req.body;
+    const { name, date, venue, rounds, start_time, end_time, registration_open, category, head_judge } = req.body;
     if (!name || !date) return res.status(400).json({ message: "Event name and date are required." });
     try {
         const [result] = await db.execute(
-            `INSERT INTO Event (name, date, venue, start_time, end_time, registration_open, category, head_judge)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-            [name, date, venue || null, start_time || null, end_time || null,
+            `INSERT INTO Event (name, date, venue, rounds, start_time, end_time, registration_open, category, head_judge)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [name, date, venue || null, rounds || 1, start_time || null, end_time || null,
                 registration_open !== undefined ? registration_open : 1, category || null, head_judge || null]
         );
         res.status(201).json({ message: "Event created.", event_id: result.insertId });
@@ -224,15 +224,15 @@ router.post("/", async (req, res) => {
     }
 });
 
-// PUT /api/events/:id – with head_judge field
+// PUT /api/events/:id – with rounds and head_judge fields
 router.put("/:id", async (req, res) => {
-    const { name, date, venue, start_time, end_time, registration_open, category, head_judge } = req.body;
+    const { name, date, venue, rounds, start_time, end_time, registration_open, category, head_judge } = req.body;
     if (!name || !date) return res.status(400).json({ message: "Event name and date are required." });
     try {
         const [result] = await db.execute(
-            `UPDATE Event SET name=?, date=?, venue=?, start_time=?, end_time=?, registration_open=?, category=?, head_judge=?
+            `UPDATE Event SET name=?, date=?, venue=?, rounds=?, start_time=?, end_time=?, registration_open=?, category=?, head_judge=?
              WHERE event_id=?`,
-            [name, date, venue || null, start_time || null, end_time || null,
+            [name, date, venue || null, rounds || 1, start_time || null, end_time || null,
                 registration_open !== undefined ? registration_open : 1, category || null, head_judge || null, req.params.id]
         );
         if (result.affectedRows === 0) return res.status(404).json({ message: "Event not found." });

@@ -24,6 +24,7 @@ export interface Event {
     name: string;
     date: string;
     venue: string | null;
+    rounds: number;
     start_time: string | null;
     end_time: string | null;
     registration_open: boolean;

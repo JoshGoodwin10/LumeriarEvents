@@ -254,9 +254,9 @@ export default function JudgeView() {
                                     <h3>{event.name}</h3>
                                     <p>{event.venue} – {new Date(event.date).toLocaleDateString()}</p>
                                 </div>
-                                <div className="event-actions">
-                                    <Link to={`/events/${event.event_id}`} className="btn-details">View Event</Link>
-                                </div>
+                                <Link to={`/events/${event.event_id}?approve=true`} className="btn-details">
+                                    Review Scores & Approve
+                                </Link>
                             </div>
                         ))}
                     </div>

@@ -256,6 +256,9 @@ router.get('/:id', async (req, res) => {
 // =======================
 // PUT /api/register/:id/approve – Approve request, create team/students/coach/event_team/score, send email
 // =======================
+// =======================
+// PUT /api/register/:id/approve – Approve request, create team/students/coach/event_team/score rows (for each round)
+// =======================
 router.put('/:id/approve', async (req, res) => {
     const requestId = req.params.id;
     let connection;
@@ -336,6 +339,19 @@ router.put('/:id/approve', async (req, res) => {
         const teamId = teamResult.insertId;
 
         // 4. Copy BLOB fields from team_request to team
+        const copyBlobIfExists = async (conn, reqId, tId, fieldName) => {
+            const [rows] = await conn.execute(
+                `SELECT ${fieldName} FROM team_request WHERE request_id = ?`,
+                [reqId]
+            );
+            const blob = rows[0]?.[fieldName];
+            if (blob) {
+                await conn.execute(
+                    `UPDATE team SET ${fieldName} = ? WHERE team_id = ?`,
+                    [blob, tId]
+                );
+            }
+        };
         await copyBlobIfExists(connection, requestId, teamId, 'material_bill');
         await copyBlobIfExists(connection, requestId, teamId, 'engineering_plan');
         await copyBlobIfExists(connection, requestId, teamId, 'project_report');
@@ -371,16 +387,25 @@ router.put('/:id/approve', async (req, res) => {
         );
         const eventTeamId = eventTeamResult.insertId;
 
-        // 7. Create empty scorecard for round 1
-        await connection.execute(
-            `INSERT INTO score 
-            (event_team_id, round, technical_score, innovation_design_score, theme_score, 
-             real_world_score, teamwork_score, judge_id, is_approved)
-             VALUES (?, 1, 0, 0, 0, 0, 0, NULL, 0)`,
-            [eventTeamId]
+        // 7. Get total number of rounds for this event
+        const [eventRows] = await connection.execute(
+            `SELECT rounds FROM Event WHERE event_id = ?`,
+            [teamReq.event]
         );
+        const totalRounds = eventRows[0]?.rounds || 1;
 
-        // 8. Mark request as approved
+        // 8. Create empty score rows for each round (1 to totalRounds)
+        for (let round = 1; round <= totalRounds; round++) {
+            await connection.execute(
+                `INSERT INTO score 
+                (event_team_id, round, technical_score, innovation_design_score, theme_score, 
+                 real_world_score, teamwork_score, judge_id, is_approved)
+                 VALUES (?, ?, NULL, NULL, NULL, NULL, NULL, NULL, 0)`,
+                [eventTeamId, round]
+            );
+        }
+
+        // 9. Mark request as approved
         await connection.execute(
             `UPDATE team_request SET is_approved = 1 WHERE request_id = ?`,
             [requestId]
@@ -388,25 +413,15 @@ router.put('/:id/approve', async (req, res) => {
 
         await connection.commit();
 
-        // 9. Send confirmation email using Gmail API (do not block if fails)
+        // 10. Send confirmation email (unchanged)
         if (coachReq && coachReq.email) {
             const emailSubject = `Your team registration has been approved!`;
-            const emailBody = `Dear ${coachReq.first_name} ${coachReq.surname},
-
-Your registration for the team "${teamReq.team_name}" has been approved.
-
-Your team has been registered for the event: ${teamReq.event}.
-
-You can now log in to the portal to view scores and additional information.
-
-Best regards,
-Lumeriar Robotics Team`;
+            const emailBody = `Dear ${coachReq.first_name} ${coachReq.surname},\n\nYour registration for the team "${teamReq.team_name}" has been approved.\n\nYour team has been registered for the event: ${teamReq.event}.\n\nYou can now log in to the portal to view scores and additional information.\n\nBest regards,\nLumeriar Robotics Team`;
             try {
                 await sendEmail(coachReq.email, emailSubject, emailBody);
                 console.log(`✅ Email sent to ${coachReq.email}`);
             } catch (emailError) {
                 console.error(`❌ Failed to send email to ${coachReq.email}:`, emailError.message);
-                // Approval already succeeded, just log the error
             }
         }
 
