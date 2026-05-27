@@ -394,7 +394,7 @@ router.put('/:id/approve', async (req, res) => {
                 `INSERT INTO score 
                 (event_team_id, round, technical_score, innovation_design_score, theme_score, 
                  real_world_score, teamwork_score, judge_id, is_approved)
-                 VALUES (?, ?, NULL, NULL, NULL, NULL, NULL, NULL, 0)`,
+                 VALUES (?, ?, 0, 0, 0, 0, 0, NULL, 0)`,
                 [eventTeamId, round]
             );
         }
