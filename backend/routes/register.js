@@ -2,6 +2,7 @@
 const express = require('express');
 const multer = require('multer');
 const db = require('../db');
+const sendEmail = require('../utils/email');   // 👈 import EmailJS utility
 
 const router = express.Router();
 
@@ -47,6 +48,7 @@ const copyBlobIfExists = async (connection, requestId, teamId, fieldName) => {
 // POST – Register a new team (uploads files into database as BLOBs)
 // =======================
 router.post('/', upload.any(), async (req, res) => {
+    // ... (unchanged, same as your current code)
     console.log('📥 Registration request received');
     console.log('Files:', req.files.map(f => f.fieldname));
 
@@ -161,6 +163,7 @@ router.post('/', upload.any(), async (req, res) => {
 // GET /api/register – List all requests with filters (admin dashboard)
 // =======================
 router.get('/', async (req, res) => {
+    // ... unchanged (same as your current code)
     try {
         const { search, is_approved } = req.query;
         let query = `
@@ -190,7 +193,6 @@ router.get('/', async (req, res) => {
         query += ` ORDER BY r.created_at DESC`;
 
         const [rows] = await db.execute(query, params);
-        // The BLOB columns are not selected, so no need to strip them
         res.json(rows);
     } catch (err) {
         console.error(err);
@@ -202,6 +204,7 @@ router.get('/', async (req, res) => {
 // GET /api/register/:id – Fetch one request with file existence flags
 // =======================
 router.get('/:id', async (req, res) => {
+    // ... unchanged (same as your current code)
     try {
         const requestId = req.params.id;
 
@@ -253,10 +256,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // =======================
-// PUT /api/register/:id/approve – Approve request, create team/students/coach/event_team/score, send email
-// =======================
-// =======================
-// PUT /api/register/:id/approve – Approve request, create team/students/coach/event_team/score rows (for each round)
+// PUT /api/register/:id/approve – Approve request, create records, send rich HTML email
 // =======================
 router.put('/:id/approve', async (req, res) => {
     const requestId = req.params.id;
@@ -285,6 +285,14 @@ router.put('/:id/approve', async (req, res) => {
             [requestId]
         );
         const coachReq = coachReqRows[0];
+
+        // 1b. Get event details for email
+        const [eventRows] = await connection.execute(
+            `SELECT name, date, venue, start_time, end_time, category 
+             FROM Event WHERE event_id = ?`,
+            [teamReq.event]
+        );
+        const event = eventRows[0];
 
         // 2. Find or create coach by email (avoid duplication)
         let coachId = null;
@@ -338,19 +346,6 @@ router.put('/:id/approve', async (req, res) => {
         const teamId = teamResult.insertId;
 
         // 4. Copy BLOB fields from team_request to team
-        const copyBlobIfExists = async (conn, reqId, tId, fieldName) => {
-            const [rows] = await conn.execute(
-                `SELECT ${fieldName} FROM team_request WHERE request_id = ?`,
-                [reqId]
-            );
-            const blob = rows[0]?.[fieldName];
-            if (blob) {
-                await conn.execute(
-                    `UPDATE team SET ${fieldName} = ? WHERE team_id = ?`,
-                    [blob, tId]
-                );
-            }
-        };
         await copyBlobIfExists(connection, requestId, teamId, 'material_bill');
         await copyBlobIfExists(connection, requestId, teamId, 'engineering_plan');
         await copyBlobIfExists(connection, requestId, teamId, 'project_report');
@@ -387,11 +382,11 @@ router.put('/:id/approve', async (req, res) => {
         const eventTeamId = eventTeamResult.insertId;
 
         // 7. Get total number of rounds for this event
-        const [eventRows] = await connection.execute(
+        const [roundsRow] = await connection.execute(
             `SELECT rounds FROM Event WHERE event_id = ?`,
             [teamReq.event]
         );
-        const totalRounds = eventRows[0]?.rounds || 1;
+        const totalRounds = roundsRow[0]?.rounds || 1;
 
         // 8. Create empty score rows for each round (1 to totalRounds)
         for (let round = 1; round <= totalRounds; round++) {
@@ -412,12 +407,39 @@ router.put('/:id/approve', async (req, res) => {
 
         await connection.commit();
 
-        // 10. Send confirmation email (unchanged)
+        // 10. Send confirmation email using EmailJS (rich HTML)
         if (coachReq && coachReq.email) {
-            const emailSubject = `Your team registration has been approved!`;
-            const emailBody = `Dear ${coachReq.first_name} ${coachReq.surname},\n\nYour registration for the team "${teamReq.team_name}" has been approved.\n\nYour team has been registered for the event: ${teamReq.event}.\n\nYou can now log in to the portal to view scores and additional information.\n\nBest regards,\nLumeriar Robotics Team`;
+            // Build HTML table rows for students
+            let studentsHtml = '';
+            for (const student of studentsReq) {
+                studentsHtml += `
+                    <tr>
+                        <td style="border:1px solid #ddd; padding:8px;">${escapeHtml(student.first_name)} ${escapeHtml(student.surname)}</td>
+                        <td style="border:1px solid #ddd; padding:8px;">${escapeHtml(student.grade)}</td>
+                        <td style="border:1px solid #ddd; padding:8px;">${escapeHtml(student.role || '—')}</td>
+                        <td style="border:1px solid #ddd; padding:8px;">${escapeHtml(student.shirt_size || '—')}</td>
+                    </tr>
+                `;
+            }
+
+            const templateParams = {
+                coach_name: `${coachReq.first_name} ${coachReq.surname}`,
+                team_name: teamReq.team_name,
+                event_name: event.name,
+                event_date: new Date(event.date).toLocaleDateString(),
+                event_venue: event.venue || 'TBA',
+                event_start_time: event.start_time ? event.start_time.slice(0, 5) : 'TBA',
+                event_end_time: event.end_time ? event.end_time.slice(0, 5) : 'TBA',
+                event_category: event.category || 'General',
+                school_name: teamReq.school_name || (await getSchoolName(teamReq.school_id)),
+                team_category: teamReq.category,
+                thematic_focus: teamReq.theme,
+                project_description: teamReq.project_description,
+                students_table_rows: studentsHtml,
+            };
+
             try {
-                await sendEmail(coachReq.email, emailSubject, emailBody);
+                await sendEmail(coachReq.email, 'Your team registration has been approved!', templateParams);
                 console.log(`✅ Email sent to ${coachReq.email}`);
             } catch (emailError) {
                 console.error(`❌ Failed to send email to ${coachReq.email}:`, emailError.message);
@@ -434,12 +456,29 @@ router.put('/:id/approve', async (req, res) => {
     }
 });
 
+// Helper to escape HTML
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function (m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+    });
+}
+
+// Helper to get school name (fallback)
+async function getSchoolName(schoolId) {
+    if (!schoolId) return 'Unknown School';
+    const [rows] = await db.execute('SELECT school_name FROM School WHERE school_id = ?', [schoolId]);
+    return rows[0]?.school_name || 'Unknown School';
+}
+
 // =======================
 // DOWNLOAD ENDPOINTS – Retrieve binary files from database
 // =======================
-
-// Download team document
 router.get('/:id/download/team/:field', async (req, res) => {
+    // ... unchanged (same as your current code)
     const { id, field } = req.params;
     const allowed = ['material_bill', 'engineering_plan', 'project_report', 'engineering_journal'];
     if (!allowed.includes(field)) return res.status(400).json({ message: 'Invalid field.' });
@@ -454,8 +493,8 @@ router.get('/:id/download/team/:field', async (req, res) => {
     }
 });
 
-// Download student document
 router.get('/:id/download/student/:index/:field', async (req, res) => {
+    // ... unchanged
     const { id, index, field } = req.params;
     const allowed = ['parent_guardian_consent_form', 'signed_integrity_declaration'];
     if (!allowed.includes(field)) return res.status(400).json({ message: 'Invalid field.' });
@@ -474,8 +513,8 @@ router.get('/:id/download/student/:index/:field', async (req, res) => {
     }
 });
 
-// Download coach integrity declaration
 router.get('/:id/download/coach/integrity', async (req, res) => {
+    // ... unchanged
     const { id } = req.params;
     try {
         const [rows] = await db.execute(
