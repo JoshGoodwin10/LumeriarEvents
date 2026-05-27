@@ -1,6 +1,6 @@
 // src/pages/EventDetail.tsx
 import { useState, useEffect } from "react";
-import { useParams, Link, useLocation } from "react-router-dom"; // added useLocation
+import { useParams, Link, useLocation } from "react-router-dom";
 import { createPortal } from "react-dom";
 import { fetchJudges, type Judge } from "../../api/judges";
 import {
@@ -14,7 +14,6 @@ import {
     type ScoreHistory,
 } from "../../api/scores";
 
-// Extend the round type to include score_id and is_approved (these come from backend)
 interface ExtendedRound {
     round: number;
     total: number;
@@ -30,7 +29,6 @@ interface ExtendedRound {
     judge_id: number | null;
 }
 
-// Extend TeamInEvent to have our extended rounds
 interface ExtendedTeam extends TeamInEvent {
     scores: {
         rounds: ExtendedRound[];
@@ -66,7 +64,6 @@ function ScoreModal({
     onClose: () => void;
     onSaved: () => void;
 }) {
-    // ... (same as before – no changes needed)
     const [form, setForm] = useState({
         judge_id: existingScore?.judge_id ?? (allJudges[0]?.judge_id || 0),
         technical_score: existingScore?.technical_score ?? "",
@@ -293,12 +290,12 @@ function AssignJudgeModal({
     );
 }
 
-// ─── Main Component (updated with approval for head judges) ───
+// ─── Main Component (with Most Improved Nomination) ──────────
 export default function EventDetail() {
     const { id } = useParams<{ id: string }>();
     const location = useLocation();
     const queryParams = new URLSearchParams(location.search);
-    const allowApprove = queryParams.get('approve') === 'true'; // head judge mode
+    const allowApprove = queryParams.get('approve') === 'true';
 
     const [event, setEvent] = useState<{ name: string; date: string; category: string | null } | null>(null);
     const [teams, setTeams] = useState<ExtendedTeam[]>([]);
@@ -308,6 +305,9 @@ export default function EventDetail() {
     const [editingScore, setEditingScore] = useState<any>(null);
     const [viewingHistory, setViewingHistory] = useState<number | null>(null);
     const [assigningJudge, setAssigningJudge] = useState<{ event_team_id: number; team_name: string } | null>(null);
+    // Most Improved nomination
+    const [showNominationModal, setShowNominationModal] = useState(false);
+    const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
 
     const loadData = async () => {
         if (!id) return;
@@ -318,7 +318,6 @@ export default function EventDetail() {
                 fetchJudges(),
             ]);
             setEvent(eventDetails.event);
-            // Cast teams to ExtendedTeam (assuming backend returns score_id and is_approved)
             setTeams(eventDetails.teams as ExtendedTeam[]);
             setAllJudges(judgesList ?? []);
         } catch (err: any) {
@@ -335,9 +334,51 @@ export default function EventDetail() {
     const handleApproveScore = async (scoreId: number) => {
         try {
             await approveScore(scoreId);
-            loadData(); // refresh after approval
+            loadData();
         } catch (err: any) {
             alert("Failed to approve score: " + err.message);
+        }
+    };
+
+    const generateAwards = async () => {
+        if (!window.confirm('Generate awards for this event? Existing awards will be replaced.')) return;
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`/api/awards/generate/${id}`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error('Generation failed');
+            alert('Awards generated successfully!');
+        } catch (err: any) {
+            alert(err.message);
+        }
+    };
+
+    const nominateMostImproved = async () => {
+        if (!selectedTeamId) {
+            alert('Please select a team.');
+            return;
+        }
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch('/api/awards/nominate-most-improved', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ event_id: Number(id), team_id: selectedTeamId }),
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.message || 'Nomination failed');
+            }
+            alert('Most Improved award nominated successfully!');
+            setShowNominationModal(false);
+            setSelectedTeamId(null);
+        } catch (err: any) {
+            alert(err.message);
         }
     };
 
@@ -352,18 +393,28 @@ export default function EventDetail() {
                     <h1 className="td-title">{event.name}</h1>
                     <p className="td-subtitle">{new Date(event.date).toLocaleDateString()} · {event.category || "Uncategorized"}</p>
                 </div>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    {!allowApprove && (
+                        <button className="btn-primary" onClick={generateAwards}>
+                            Generate Awards
+                        </button>
+                    )}
+                    {allowApprove && (
+                        <button className="btn-primary" onClick={() => setShowNominationModal(true)}>
+                            Nominate Most Improved
+                        </button>
+                    )}
+                    <Link to="/events" className="btn-secondary">← Back to Events</Link>
+                </div>
             </div>
 
-            {/* Teams summary (with Assign Judge button) */}
+            {/* Teams summary (unchanged) */}
             <div className="detail-card">
                 <h3>Teams</h3>
                 <table className="td-table">
                     <thead>
                         <tr>
-                            <th>Team</th>
-                            <th>Category</th>
-                            <th>Total Points</th>
-                            <th>Actions</th>
+                            <th>Team</th><th>Category</th><th>Total Points</th><th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -387,7 +438,7 @@ export default function EventDetail() {
                 </table>
             </div>
 
-            {/* Score Cards per team (with approval for head judges) */}
+            {/* Score Cards per team (unchanged) */}
             <div className="detail-card">
                 <h3>Score Cards</h3>
                 {teams.map((team) => {
@@ -398,16 +449,8 @@ export default function EventDetail() {
                             <table className="td-table">
                                 <thead>
                                     <tr>
-                                        <th>Round</th>
-                                        <th>Technical</th>
-                                        <th>Innovation</th>
-                                        <th>Theme</th>
-                                        <th>Real World</th>
-                                        <th>Teamwork</th>
-                                        <th>Total</th>
-                                        <th>Judge</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
+                                        <th>Round</th><th>Technical</th><th>Innovation</th><th>Theme</th><th>Real World</th><th>Teamwork</th>
+                                        <th>Total</th><th>Judge</th><th>Status</th><th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -425,48 +468,23 @@ export default function EventDetail() {
                                                 <td>{b.teamwork ?? "—"}</td>
                                                 <td><strong>{total}</strong></td>
                                                 <td>{roundScore.judge_id ? (allJudges.find(j => j.judge_id === roundScore.judge_id)?.first_name ?? "—") : "—"}</td>
-                                                <td>
-                                                    {isApproved ? "✅ Approved" : "⏳ Pending"}
-                                                </td>
+                                                <td>{isApproved ? "✅ Approved" : "⏳ Pending"}</td>
                                                 <td className="actions">
                                                     {allowApprove && !isApproved && (
-                                                        <button
-                                                            className="btn-icon approve"
-                                                            onClick={() => handleApproveScore(roundScore.score_id)}
-                                                            title="Approve Score"
-                                                        >
-                                                            Approve
-                                                        </button>
+                                                        <button className="btn-icon approve" onClick={() => handleApproveScore(roundScore.score_id)}>Approve</button>
                                                     )}
-                                                    <button
-                                                        className="btn-icon edit"
-                                                        onClick={() => {
-                                                            // For editing, we need to retrieve the full existing score details.
-                                                            // We can pass what we have in roundScore (but we lack judge_id in roundScore? Actually roundScore may not have judge_id.
-                                                            // For simplicity, we'll build editingScore with available data.
-                                                            setEditingScore({
-                                                                event_team_id: team.event_team_id,
-                                                                team_name: team.team_name,
-                                                                round: roundScore.round,
-                                                                score_id: roundScore.score_id,
-                                                                technical_score: b.technical,
-                                                                innovation_design_score: b.innovation_design,
-                                                                theme_score: b.theme,
-                                                                real_world_score: b.real_world,
-                                                                teamwork_score: b.teamwork,
-                                                                // judge_id is not stored in roundScore; we'd need to fetch separately or ignore.
-                                                                // We'll let the modal default to first judge; admin can correct.
-                                                            });
-                                                        }}
-                                                    >
-                                                        Edit
-                                                    </button>
-                                                    <button
-                                                        className="btn-icon history"
-                                                        onClick={() => setViewingHistory(roundScore.score_id)}
-                                                    >
-                                                        History
-                                                    </button>
+                                                    <button className="btn-icon edit" onClick={() => setEditingScore({
+                                                        event_team_id: team.event_team_id,
+                                                        team_name: team.team_name,
+                                                        round: roundScore.round,
+                                                        score_id: roundScore.score_id,
+                                                        technical_score: b.technical,
+                                                        innovation_design_score: b.innovation_design,
+                                                        theme_score: b.theme,
+                                                        real_world_score: b.real_world,
+                                                        teamwork_score: b.teamwork,
+                                                    })}>Edit</button>
+                                                    <button className="btn-icon history" onClick={() => setViewingHistory(roundScore.score_id)}>History</button>
                                                 </td>
                                             </tr>
                                         );
@@ -478,6 +496,7 @@ export default function EventDetail() {
                 })}
             </div>
 
+            {/* Modals */}
             {editingScore && (
                 <ScoreModal
                     eventId={Number(id)}
@@ -507,6 +526,32 @@ export default function EventDetail() {
                     onClose={() => setAssigningJudge(null)}
                     onAssigned={() => { setAssigningJudge(null); loadData(); }}
                 />
+            )}
+
+            {/* Most Improved Nomination Modal */}
+            {showNominationModal && createPortal(
+                <div className="tdm-backdrop" onClick={() => setShowNominationModal(false)}>
+                    <div className="tdm-box" onClick={(e) => e.stopPropagation()}>
+                        <div className="tdm-head">
+                            <h2>Nominate Most Improved Team</h2>
+                            <button className="tdm-close" onClick={() => setShowNominationModal(false)}>×</button>
+                        </div>
+                        <div className="tdm-field">
+                            <label>Select Team</label>
+                            <select value={selectedTeamId ?? ''} onChange={e => setSelectedTeamId(Number(e.target.value))}>
+                                <option value="">-- Select a team --</option>
+                                {teams.map(team => (
+                                    <option key={team.team_id} value={team.team_id}>{team.team_name}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="tdm-actions">
+                            <button className="btn-secondary" onClick={() => setShowNominationModal(false)}>Cancel</button>
+                            <button className="btn-primary" onClick={nominateMostImproved}>Nominate</button>
+                        </div>
+                    </div>
+                </div>,
+                document.body
             )}
 
             <style>{`

@@ -13,6 +13,7 @@ const scoresRoutes = require("./routes/scores");
 const judgesRoutes = require("./routes/judges");
 const requestsRoutes = require("./routes/requests");
 const registerRoutes = require("./routes/register");
+const awardsRoutes = require('./routes/awards');
 // etc.
 
 const app = express();
@@ -40,6 +41,7 @@ app.use("/api/scores", scoresRoutes);
 app.use("/api/judges", judgesRoutes);
 app.use("/api/requests", requestsRoutes);
 app.use("/api/register", registerRoutes);
+app.use('/api/awards', awardsRoutes);
 // etc.
 
 // Health check

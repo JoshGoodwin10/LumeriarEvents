@@ -20,6 +20,7 @@ import Leaderboards from './pages/PublicPages/Leaderboards';
 import Register from './pages/PublicPages/Register';
 import RequestDetail from './pages/Details/RequestDetail';
 import JudgeView from './pages/JudgeView/JudgeView';
+import AwardsDashboard from './pages/Dashboards/AwardsDashboard';
 
 const HomePage = () => (
   <>
@@ -105,6 +106,7 @@ function App() {
             <Route path="/students" element={<StudentDashboard />} />
             <Route path="/coaches" element={<CoachesDashboard />} />
             <Route path="/events" element={<EventsDashboard />} />
+            <Route path="/awards" element={<AwardsDashboard />} />
             <Route path="/judges" element={<JudgesDashboard />} />
             <Route path="/requests" element={<RequestsDashboard />} />
             <Route path="/requests/:id" element={<RequestDetail />} />
