@@ -21,6 +21,7 @@ import Register from './pages/PublicPages/Register';
 import RequestDetail from './pages/Details/RequestDetail';
 import JudgeView from './pages/JudgeView/JudgeView';
 import AwardsDashboard from './pages/Dashboards/AwardsDashboard';
+import RulesDocs from './pages/PublicPages/RulesDocs';
 
 const HomePage = () => (
   <>
@@ -97,6 +98,7 @@ function App() {
           <Route path="/leaderboards" element={<Leaderboards />} />
           <Route path="/leaderboard/:eventId" element={<Leaderboards />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/rules-docs" element={<RulesDocs />} />
 
           {/* Private routes (all require authentication) */}
           <Route element={<PrivateRoute />}>
