@@ -1,7 +1,7 @@
 // src/pages/Details/RequestDetail.tsx
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import '../../layout/dashboard.css';
+import '../../layout/details.css';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -241,69 +241,6 @@ export default function RequestDetail() {
                     )}
                 </div>
             )}
-
-            <style>{`
-                .detail-card {
-                    background: rgba(255,255,255,.03);
-                    border: 1px solid rgba(255,255,255,.08);
-                    border-radius: 12px;
-                    padding: 20px;
-                    margin-bottom: 24px;
-                }
-                .detail-card h3 {
-                    margin-top: 0;
-                    margin-bottom: 16px;
-                    font-family: 'Syne', sans-serif;
-                    font-size: 16px;
-                    font-weight: 700;
-                    color: #f1f5f9;
-                }
-                .detail-grid {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fill, minmax(200px,1fr));
-                    gap: 16px;
-                    margin-bottom: 16px;
-                }
-                .list > div, .student-item {
-                    padding: 8px 0;
-                    border-bottom: 1px solid rgba(255,255,255,.05);
-                }
-                .file-group {
-                    margin-top: 6px;
-                    display: flex;
-                    gap: 16px;
-                    flex-wrap: wrap;
-                }
-                .file-link-button {
-                    background: none;
-                    border: none;
-                    color: #60a5fa;
-                    cursor: pointer;
-                    font-size: 0.9rem;
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 6px;
-                    padding: 4px 0;
-                }
-                .file-link-button:hover {
-                    text-decoration: underline;
-                }
-                .file-link-button:disabled {
-                    opacity: 0.6;
-                    cursor: not-allowed;
-                }
-                .spinner-sm {
-                    display: inline-block;
-                    width: 12px;
-                    height: 12px;
-                    border: 2px solid #60a5fa;
-                    border-top-color: transparent;
-                    border-radius: 50%;
-                    animation: spin 0.6s linear infinite;
-                }
-                @keyframes spin { to { transform: rotate(360deg); } }
-                .td-error { text-align: center; padding: 40px; color: #f87171; }
-            `}</style>
         </div>
     );
 }

@@ -36,7 +36,7 @@ const Header = () => {
                             </ul>
                         </li>
                         <li className="nav__item nav__item--dropdown">
-                            <Link to="./events" className="nav__link">
+                            <Link to="./events-list" className="nav__link">
                                 Events <i className="fa fa-caret-down nav__caret"></i>
                             </Link>
                             <ul className="nav__dropdown">

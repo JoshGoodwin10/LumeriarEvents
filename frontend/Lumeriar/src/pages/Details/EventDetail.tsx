@@ -13,6 +13,7 @@ import {
     fetchScoreHistory,
     type ScoreHistory,
 } from "../../api/scores";
+import "../../layout/details.css";
 
 interface ExtendedRound {
     round: number;
@@ -553,22 +554,6 @@ export default function EventDetail() {
                 </div>,
                 document.body
             )}
-
-            <style>{`
-                .team-score-section { margin-bottom: 32px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; }
-                .team-score-section h4 { font-family: 'Syne', sans-serif; margin-bottom: 12px; color: #f1f5f9; }
-                .td-points { font-weight: 700; color: #60a5fa; }
-                .btn-primary { background: #f39c12; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; }
-                .btn-icon { background: none; border: none; cursor: pointer; margin-right: 8px; }
-                .btn-icon.approve { color: #10b981; }
-                .btn-icon.edit { color: #60a5fa; }
-                .btn-icon.history { color: #8b5cf6; }
-                .btn-icon.assign-judge { background: none; border: none; font-size: 1.2rem; cursor: pointer; }
-                .spinner-sm { display: inline-block; width: 12px; height: 12px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; }
-                @keyframes spin { to { transform: rotate(360deg); } }
-                .history-item { border-bottom: 1px solid rgba(255,255,255,0.1); padding: 12px 0; }
-                .history-item ul { margin: 6px 0 0 16px; font-size: 12px; color: #94a3b8; }
-            `}</style>
         </div>
     );
 }

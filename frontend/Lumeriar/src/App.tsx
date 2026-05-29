@@ -5,7 +5,7 @@ import Login from './pages/Login'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { AuthProvider } from './context/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
-import Dashboard from './pages/Dashboards/Dashboard';
+import Overview from './pages/Dashboards/Overview';
 import TeamsDashboard from './pages/Dashboards/TeamsDashboard';
 import TeamDetail from './pages/Details/TeamDetail';
 import CoachesDashboard from './pages/Dashboards/CoachesDashboard';
@@ -22,6 +22,8 @@ import RequestDetail from './pages/Details/RequestDetail';
 import JudgeView from './pages/JudgeView/JudgeView';
 import AwardsDashboard from './pages/Dashboards/AwardsDashboard';
 import RulesDocs from './pages/PublicPages/RulesDocs';
+import AdminLayout from './pages/Dashboards/AdminLayout';
+import DocumentsDashboard from './pages/Dashboards/DocumentsDashboard';
 
 const HomePage = () => (
   <>
@@ -94,7 +96,7 @@ function App() {
           <Route path="/index.html" element={<HomePage />} />
           <Route path="/pages/index.html" element={<HomePage />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/events" element={<Events />} />
+          <Route path="/events-list" element={<Events />} />
           <Route path="/leaderboards" element={<Leaderboards />} />
           <Route path="/leaderboard/:eventId" element={<Leaderboards />} />
           <Route path="/register" element={<Register />} />
@@ -102,28 +104,31 @@ function App() {
 
           {/* Private routes (all require authentication) */}
           <Route element={<PrivateRoute />}>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/teams" element={<TeamsDashboard />} />
-            <Route path="/school" element={<SchoolsDashboard />} />
-            <Route path="/students" element={<StudentDashboard />} />
-            <Route path="/coaches" element={<CoachesDashboard />} />
-            <Route path="/events" element={<EventsDashboard />} />
-            <Route path="/awards" element={<AwardsDashboard />} />
-            <Route path="/judges" element={<JudgesDashboard />} />
-            <Route path="/requests" element={<RequestsDashboard />} />
-            <Route path="/requests/:id" element={<RequestDetail />} />
-            <Route path="/teams/:id" element={<TeamDetail />} />
-            <Route path="/events/:id" element={<EventDetail />} />
-            <Route path="/judge/view" element={<JudgeView />} />
-            {/* Catch‑all inside private area: redirect to dashboard */}
-            {/* <Route path="*" element={<Navigate to="/dashboard" replace />} /> */}
+            <Route element={<AdminLayout />}>
+              <Route path="/dashboard" element={<Overview />} />
+              <Route path="/teams" element={<TeamsDashboard />} />
+              <Route path="/school" element={<SchoolsDashboard />} />
+              <Route path="/students" element={<StudentDashboard />} />
+              <Route path="/coaches" element={<CoachesDashboard />} />
+              <Route path="/events" element={<EventsDashboard />} />
+              <Route path="/awards" element={<AwardsDashboard />} />
+              <Route path="/judges" element={<JudgesDashboard />} />
+              <Route path="/requests" element={<RequestsDashboard />} />
+              <Route path="/requests/:id" element={<RequestDetail />} />
+              <Route path="/teams/:id" element={<TeamDetail />} />
+              <Route path="/events/:id" element={<EventDetail />} />
+              <Route path="/judge/view" element={<JudgeView />} />
+              <Route path="/documents" element={<DocumentsDashboard />} />
+              {/* Catch‑all inside private area: redirect to dashboard */}
+              {/* <Route path="*" element={<Navigate to="/dashboard" replace />} /> */}
+            </Route>
           </Route>
-
           {/* Optional: catch‑all for non‑private routes (e.g., 404 page) */}
           {/* If you want a 404 for public visitors, add it here (without redirecting to root) */}
         </Routes>
+
       </Layout>
-    </AuthProvider>
+    </AuthProvider >
   );
 }
 
