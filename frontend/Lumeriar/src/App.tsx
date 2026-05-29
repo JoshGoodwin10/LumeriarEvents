@@ -15,7 +15,6 @@ import EventsDashboard from './pages/Dashboards/EventsDashboard';
 import JudgesDashboard from './pages/Dashboards/JudgesDashboard';
 import EventDetail from './pages/Details/EventDetail';
 import RequestsDashboard from './pages/Dashboards/RequestsDashboard';
-import Events from './pages/PublicPages/Events';
 import Leaderboards from './pages/PublicPages/Leaderboards';
 import Register from './pages/PublicPages/Register';
 import RequestDetail from './pages/Details/RequestDetail';
@@ -24,6 +23,7 @@ import AwardsDashboard from './pages/Dashboards/AwardsDashboard';
 import RulesDocs from './pages/PublicPages/RulesDocs';
 import AdminLayout from './pages/Dashboards/AdminLayout';
 import DocumentsDashboard from './pages/Dashboards/DocumentsDashboard';
+import EventsList from './pages/PublicPages/EventsList';
 
 const HomePage = () => (
   <>
@@ -96,7 +96,7 @@ function App() {
           <Route path="/index.html" element={<HomePage />} />
           <Route path="/pages/index.html" element={<HomePage />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/events-list" element={<Events />} />
+          <Route path="/events-list" element={<EventsList />} />
           <Route path="/leaderboards" element={<Leaderboards />} />
           <Route path="/leaderboard/:eventId" element={<Leaderboards />} />
           <Route path="/register" element={<Register />} />

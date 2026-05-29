@@ -3,7 +3,20 @@ const express = require("express");
 const db = require("../db");
 const authMiddleware = require("../middleware/auth");
 
+
 const router = express.Router();
+
+// Public: GET /api/schools/public – returns list of schools (id and name)
+router.get('/public', async (req, res) => {
+    try {
+        const [rows] = await db.execute('SELECT school_id, school_name FROM School ORDER BY school_name');
+        res.json(rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Failed to fetch schools.' });
+    }
+});
+
 router.use(authMiddleware);
 
 // GET /api/schools - with filters, and computed statistics (best_score, avg_score, no_teams)

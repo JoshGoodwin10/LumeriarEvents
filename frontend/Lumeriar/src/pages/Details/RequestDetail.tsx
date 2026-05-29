@@ -150,14 +150,16 @@ export default function RequestDetail() {
                 <button className="btn-secondary" onClick={() => navigate('/requests')}>← Back to Requests</button>
             </div>
 
-            <div className="detail-card">
-                <p><strong>Status:</strong> {team.is_approved ? '✅ Approved' : '⏳ Pending'}</p>
+            <div className="detail-card" style={{ textAlign: 'center' }}>
+                <p><strong>Status:</strong> {team.is_approved ? 'Approved' : 'Pending'}</p>
                 {!team.is_approved && (
-                    <button className="btn-primary" onClick={handleApprove} disabled={approving}>
-                        {approving ? 'Approving...' : 'Approve Request'}
-                    </button>
+                    <div style={{ display: 'flex', justifyContent: 'center', marginTop: '0.5rem' }}>
+                        <button className="btn-primary" onClick={handleApprove} disabled={approving}>
+                            {approving ? 'Approving...' : 'Approve Request'}
+                        </button>
+                    </div>
                 )}
-                <p><strong>Submitted:</strong> {new Date(team.created_at).toLocaleString()}</p>
+                <p style={{ marginTop: '1rem' }}><strong>Submitted:</strong> {new Date(team.created_at).toLocaleString()}</p>
             </div>
 
             <div className="detail-card">

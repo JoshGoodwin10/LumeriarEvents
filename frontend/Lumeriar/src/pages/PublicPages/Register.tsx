@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import '../../layout/events.css'; // reuse existing styles
+import '../../layout/events.css';
 
 // --- Types ---
 interface EventInfo {
@@ -8,10 +8,11 @@ interface EventInfo {
     name: string;
     date: string;
     venue: string;
+    category: string;          // added
 }
 
 interface Student {
-    id: number; // temporary for React keys
+    id: number;
     first_name: string;
     surname: string;
     date_of_birth: string;
@@ -44,12 +45,17 @@ interface TeamFormData {
     province: string;
     project_description: string;
     how_heard: string;
-    // file uploads (team level)
     material_bill: File | null;
     engineering_plan: File | null;
     project_report: File | null;
     engineering_journal: File | null;
 }
+
+// South African provinces
+const PROVINCES = [
+    "Eastern Cape", "Free State", "Gauteng", "KwaZulu-Natal",
+    "Limpopo", "Mpumalanga", "North West", "Northern Cape", "Western Cape"
+];
 
 const emptyStudent = (id: number): Student => ({
     id,
@@ -104,6 +110,9 @@ const Register: React.FC = () => {
     });
     const [students, setStudents] = useState<Student[]>([emptyStudent(1)]);
     const [coach, setCoach] = useState<Coach>(emptyCoach);
+    const [schools, setSchools] = useState<{ school_id: number; school_name: string }[]>([]);
+    const [selectedSchoolId, setSelectedSchoolId] = useState<string>('');
+    const [newSchoolName, setNewSchoolName] = useState<string>('');
 
     // Fetch event details
     useEffect(() => {
@@ -118,7 +127,12 @@ const Register: React.FC = () => {
                 if (!res.ok) throw new Error('Event not found');
                 const data = await res.json();
                 setEvent(data);
-                setTeam(prev => ({ ...prev, event_id: parseInt(eventId) }));
+                // Auto-fill competition category from event's category
+                setTeam(prev => ({
+                    ...prev,
+                    event_id: parseInt(eventId),
+                    category: data.category || ''   // set the category field
+                }));
             } catch (err: any) {
                 setError(err.message);
             } finally {
@@ -127,6 +141,21 @@ const Register: React.FC = () => {
         };
         fetchEvent();
     }, [eventId]);
+
+    useEffect(() => {
+        const fetchSchools = async () => {
+            try {
+                const res = await fetch('/api/schools/public');
+                if (res.ok) {
+                    const data = await res.json();
+                    setSchools(data);
+                }
+            } catch (err) {
+                console.error('Failed to load schools', err);
+            }
+        };
+        fetchSchools();
+    }, []);
 
     // Student management
     const addStudent = () => {
@@ -164,7 +193,7 @@ const Register: React.FC = () => {
     const nextStep = () => setStep(s => s + 1);
     const prevStep = () => setStep(s => s - 1);
 
-    // Validation per step
+    // Validation per step (unchanged)
     const validateStep1 = (): boolean => {
         if (!team.team_name.trim()) { setError('Team name required'); return false; }
         if (!team.school.trim()) { setError('School/Institution required'); return false; }
@@ -177,7 +206,6 @@ const Register: React.FC = () => {
         return true;
     };
     const validateStep2 = (): boolean => {
-        // validate each student
         for (let student of students) {
             if (!student.first_name.trim()) { setError('All student first names required'); return false; }
             if (!student.surname.trim()) { setError('All student surnames required'); return false; }
@@ -185,9 +213,7 @@ const Register: React.FC = () => {
             if (!student.grade) { setError('All student grades required'); return false; }
             if (!student.role) { setError('All student roles required'); return false; }
             if (!student.shirt_size) { setError('All student shirt sizes required'); return false; }
-            // Optional: dietary reqs can be empty
         }
-        // validate coach
         if (!coach.first_name.trim()) { setError('Coach first name required'); return false; }
         if (!coach.surname.trim()) { setError('Coach surname required'); return false; }
         if (!coach.email.trim() || !coach.email.includes('@')) { setError('Valid coach email required'); return false; }
@@ -199,7 +225,6 @@ const Register: React.FC = () => {
         return true;
     };
     const validateStep3 = (): boolean => {
-        // Check required files (all documents)
         if (!team.material_bill) { setError('Bill of Materials/Build Budget Declaration required'); return false; }
         if (!team.engineering_plan) { setError('Engineering Plans/Schematics required'); return false; }
         if (!team.project_report) { setError('Project Report required'); return false; }
@@ -219,7 +244,6 @@ const Register: React.FC = () => {
         setError('');
         try {
             const formData = new FormData();
-            // Append team data as JSON (except files)
             const teamData = {
                 team_name: team.team_name,
                 school: team.school,
@@ -231,7 +255,6 @@ const Register: React.FC = () => {
                 how_heard: team.how_heard,
             };
             formData.append('team', JSON.stringify(teamData));
-            // Append students array (without file objects)
             const studentsData = students.map(s => ({
                 first_name: s.first_name,
                 surname: s.surname,
@@ -242,7 +265,6 @@ const Register: React.FC = () => {
                 shirt_size: s.shirt_size,
             }));
             formData.append('students', JSON.stringify(studentsData));
-            // Append coach data (without file)
             const coachData = {
                 first_name: coach.first_name,
                 surname: coach.surname,
@@ -255,7 +277,6 @@ const Register: React.FC = () => {
             };
             formData.append('coach', JSON.stringify(coachData));
 
-            // Append files with unique keys
             formData.append('material_bill', team.material_bill!);
             formData.append('engineering_plan', team.engineering_plan!);
             formData.append('project_report', team.project_report!);
@@ -274,7 +295,6 @@ const Register: React.FC = () => {
                 const err = await response.json();
                 throw new Error(err.message || 'Submission failed');
             }
-            // Success: redirect to thank you page or events page
             alert('Registration submitted successfully! Awaiting approval.');
             navigate('/events');
         } catch (err: any) {
@@ -312,11 +332,44 @@ const Register: React.FC = () => {
                         </div>
                         <div className="form-group">
                             <label>School / Institution *</label>
-                            <input type="text" value={team.school} onChange={e => handleTeamChange('school', e.target.value)} />
+                            <select
+                                value={selectedSchoolId}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setSelectedSchoolId(val);
+                                    if (val === 'new') {
+                                        setTeam({ ...team, school: newSchoolName });
+                                    } else {
+                                        const selected = schools.find(s => s.school_id.toString() === val);
+                                        if (selected) {
+                                            setTeam({ ...team, school: selected.school_name });
+                                            setNewSchoolName('');
+                                        }
+                                    }
+                                }}
+                            >
+                                <option value="">-- Select a school --</option>
+                                {schools.map(s => (
+                                    <option key={s.school_id} value={s.school_id}>{s.school_name}</option>
+                                ))}
+                                <option value="new">+ Add new school</option>
+                            </select>
+                            {selectedSchoolId === 'new' && (
+                                <input
+                                    type="text"
+                                    placeholder="Enter new school name"
+                                    value={newSchoolName}
+                                    onChange={(e) => {
+                                        setNewSchoolName(e.target.value);
+                                        setTeam({ ...team, school: e.target.value });
+                                    }}
+                                    style={{ marginTop: '8px' }}
+                                />
+                            )}
                         </div>
                         <div className="form-group">
                             <label>Competition Category *</label>
-                            <input type="text" value={team.category} onChange={e => handleTeamChange('category', e.target.value)} />
+                            <input type="text" value={team.category} onChange={e => handleTeamChange('category', e.target.value)} disabled />
                         </div>
                         <div className="form-group">
                             <label>Thematic Focus *</label>
@@ -324,7 +377,12 @@ const Register: React.FC = () => {
                         </div>
                         <div className="form-group">
                             <label>School Province *</label>
-                            <input type="text" value={team.province} onChange={e => handleTeamChange('province', e.target.value)} />
+                            <select value={team.province} onChange={e => handleTeamChange('province', e.target.value)}>
+                                <option value="">Select Province</option>
+                                {PROVINCES.map(p => (
+                                    <option key={p} value={p}>{p}</option>
+                                ))}
+                            </select>
                         </div>
                         <div className="form-group">
                             <label>Brief Project Description *</label>
@@ -340,9 +398,10 @@ const Register: React.FC = () => {
                     </div>
                 )}
 
-                {/* Step 2: Team Members and Coach */}
+                {/* Step 2: Team Members and Coach (unchanged) */}
                 {step === 2 && (
                     <div className="step-form">
+                        {/* ... same as before ... */}
                         <h3>Students</h3>
                         {students.map((student, idx) => (
                             <div key={student.id} className="student-card">
@@ -356,7 +415,7 @@ const Register: React.FC = () => {
                                     <div className="form-group"><label>Grade *</label><input value={student.grade} onChange={e => updateStudent(student.id, 'grade', e.target.value)} /></div>
                                 </div>
                                 <div className="form-row">
-                                    <div className="form-group"><label>Role (e.g., Programmer, Builder) *</label><input value={student.role} onChange={e => updateStudent(student.id, 'role', e.target.value)} /></div>
+                                    <div className="form-group"><label>Role *</label><input value={student.role} onChange={e => updateStudent(student.id, 'role', e.target.value)} /></div>
                                     <div className="form-group"><label>Shirt Size *</label>
                                         <select value={student.shirt_size} onChange={e => updateStudent(student.id, 'shirt_size', e.target.value)}>
                                             <option value="">Select</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option>
@@ -400,7 +459,7 @@ const Register: React.FC = () => {
                     </div>
                 )}
 
-                {/* Step 3: Document Uploads */}
+                {/* Step 3: Document Uploads (unchanged) */}
                 {step === 3 && (
                     <div className="step-form">
                         <h3>Team Documents</h3>
@@ -428,7 +487,7 @@ const Register: React.FC = () => {
                     </div>
                 )}
 
-                {/* Step 4: Review and Submit */}
+                {/* Step 4: Review and Submit (unchanged) */}
                 {step === 4 && (
                     <div className="step-form">
                         <h3>Review your registration</h3>

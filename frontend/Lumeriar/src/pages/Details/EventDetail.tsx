@@ -37,6 +37,15 @@ interface ExtendedTeam extends TeamInEvent {
     };
 }
 
+interface Award {
+    award_id: number;
+    team_id: number;
+    team_name: string;
+    award_type: string;
+    category_name: string | null;
+    rank_position: number | null;
+}
+
 // ─── Score Edit Modal (unchanged) ────────────────────────────
 function ScoreModal({
     eventId,
@@ -65,6 +74,7 @@ function ScoreModal({
     onClose: () => void;
     onSaved: () => void;
 }) {
+    // (unchanged – same as before)
     const [form, setForm] = useState({
         judge_id: existingScore?.judge_id ?? (allJudges[0]?.judge_id || 0),
         technical_score: existingScore?.technical_score ?? "",
@@ -291,7 +301,7 @@ function AssignJudgeModal({
     );
 }
 
-// ─── Main Component (with Most Improved Nomination) ──────────
+// ─── Main Component (with Awards, Most Improved Nomination, and sorted teams) ───
 export default function EventDetail() {
     const { id } = useParams<{ id: string }>();
     const location = useLocation();
@@ -301,12 +311,12 @@ export default function EventDetail() {
     const [event, setEvent] = useState<{ name: string; date: string; category: string | null } | null>(null);
     const [teams, setTeams] = useState<ExtendedTeam[]>([]);
     const [allJudges, setAllJudges] = useState<Judge[]>([]);
+    const [awards, setAwards] = useState<Award[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [editingScore, setEditingScore] = useState<any>(null);
     const [viewingHistory, setViewingHistory] = useState<number | null>(null);
     const [assigningJudge, setAssigningJudge] = useState<{ event_team_id: number; team_name: string } | null>(null);
-    // Most Improved nomination
     const [showNominationModal, setShowNominationModal] = useState(false);
     const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
 
@@ -314,13 +324,17 @@ export default function EventDetail() {
         if (!id) return;
         setLoading(true);
         try {
-            const [eventDetails, judgesList] = await Promise.all([
+            const [eventDetails, judgesList, awardsList] = await Promise.all([
                 fetchEventDetails(Number(id)),
                 fetchJudges(),
+                fetch(`/api/awards/event/${id}`, {
+                    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+                }).then(res => res.ok ? res.json() : []),
             ]);
             setEvent(eventDetails.event);
             setTeams(eventDetails.teams as ExtendedTeam[]);
             setAllJudges(judgesList ?? []);
+            setAwards(awardsList);
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -351,6 +365,11 @@ export default function EventDetail() {
             });
             if (!res.ok) throw new Error('Generation failed');
             alert('Awards generated successfully!');
+            // Reload awards after generation
+            const awardsRes = await fetch(`/api/awards/event/${id}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            if (awardsRes.ok) setAwards(await awardsRes.json());
         } catch (err: any) {
             alert(err.message);
         }
@@ -378,14 +397,30 @@ export default function EventDetail() {
             alert('Most Improved award nominated successfully!');
             setShowNominationModal(false);
             setSelectedTeamId(null);
+            // Refresh awards list
+            const awardsRes = await fetch(`/api/awards/event/${id}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            if (awardsRes.ok) setAwards(await awardsRes.json());
         } catch (err: any) {
             alert(err.message);
         }
     };
 
+    // Sort teams by overall total (highest first)
+    const sortedTeams = [...teams].sort((a, b) => b.scores.overall_total - a.scores.overall_total);
+
     if (loading) return <div className="td-loading"><span className="spinner-lg" /></div>;
     if (error) return <div className="td-error">{error}</div>;
     if (!event) return <div className="td-empty">Event not found.</div>;
+
+    // Group awards by category (Overall or specific category)
+    const groupedAwards = awards.reduce((acc, award) => {
+        const key = award.category_name || 'Overall';
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(award);
+        return acc;
+    }, {} as Record<string, Award[]>);
 
     return (
         <div className="td-root">
@@ -409,7 +444,7 @@ export default function EventDetail() {
                 </div>
             </div>
 
-            {/* Teams summary (unchanged) */}
+            {/* Teams summary (sorted) */}
             <div className="detail-card">
                 <h3>Teams</h3>
                 <table className="td-table">
@@ -419,7 +454,7 @@ export default function EventDetail() {
                         </tr>
                     </thead>
                     <tbody>
-                        {teams.map((team) => (
+                        {sortedTeams.map((team) => (
                             <tr key={team.team_id}>
                                 <td className="td-name">{team.team_name}</td>
                                 <td>{team.category}</td>
@@ -439,10 +474,10 @@ export default function EventDetail() {
                 </table>
             </div>
 
-            {/* Score Cards per team (unchanged) */}
+            {/* Score Cards per team (using sorted teams) */}
             <div className="detail-card">
                 <h3>Score Cards</h3>
-                {teams.map((team) => {
+                {sortedTeams.map((team) => {
                     const rounds = team.scores.rounds;
                     return (
                         <div key={team.team_id} className="team-score-section">
@@ -497,7 +532,32 @@ export default function EventDetail() {
                 })}
             </div>
 
-            {/* Modals */}
+            {/* Awards Section */}
+            <div className="detail-card">
+                <h3>Awards</h3>
+                {awards.length === 0 ? (
+                    <p>No awards generated for this event yet.</p>
+                ) : (
+                    Object.entries(groupedAwards).map(([category, catAwards]) => (
+                        <div key={category} style={{ marginBottom: '1.5rem' }}>
+                            <h4 style={{ marginBottom: '0.5rem' }}>{category === 'Overall' ? 'Overall Awards' : category}</h4>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
+                                {catAwards.map(award => (
+                                    <div key={award.award_id} className="award-card" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-medium)', borderRadius: '12px', padding: '1rem' }}>
+                                        <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--color-lumeriar-orange)' }}>{award.award_type}</div>
+                                        <div style={{ marginTop: '0.5rem' }}>
+                                            <span style={{ fontWeight: 'bold' }}>{award.team_name}</span>
+                                            {award.rank_position && <span style={{ marginLeft: '0.5rem', fontSize: '0.8rem', color: 'var(--text-dim)' }}>(#{award.rank_position})</span>}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ))
+                )}
+            </div>
+
+            {/* Modals (unchanged) */}
             {editingScore && (
                 <ScoreModal
                     eventId={Number(id)}
@@ -541,7 +601,7 @@ export default function EventDetail() {
                             <label>Select Team</label>
                             <select value={selectedTeamId ?? ''} onChange={e => setSelectedTeamId(Number(e.target.value))}>
                                 <option value="">-- Select a team --</option>
-                                {teams.map(team => (
+                                {sortedTeams.map(team => (
                                     <option key={team.team_id} value={team.team_id}>{team.team_name}</option>
                                 ))}
                             </select>

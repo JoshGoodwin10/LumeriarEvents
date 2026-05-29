@@ -31,18 +31,14 @@ export default function AdminLayout() {
         <div className="dash-root">
             <aside className={`sidebar ${collapsed ? "collapsed" : ""}`}>
                 <div className="sidebar-top">
-                    <div className="sidebar-brand">
-                        <div className="brand-icon">L</div>
-                        {!collapsed && <span className="brand-name">LUMERIAR</span>}
-                    </div>
                     <button className="collapse-btn" onClick={() => setCollapsed(c => !c)}>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             {collapsed ? <polyline points="9 18 15 12 9 6" /> : <polyline points="15 18 9 12 15 6" />}
                         </svg>
                     </button>
+                    {!collapsed && <span className="nav-group-label">MENU</span>}
                 </div>
                 <nav className="sidebar-nav">
-                    <p className="nav-group-label">{!collapsed && "MAIN MENU"}</p>
                     {NAV_SECTIONS.map(({ key, label, path, icon }) => (
                         <button
                             key={key}
