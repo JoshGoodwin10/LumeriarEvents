@@ -1,8 +1,8 @@
 // src/layout/AdminLayout.tsx
 import { useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
-import "../../layout/dashboard.css";
+import { useAuth } from "../context/AuthContext";
+import "../layout/dashboard.css";
 
 type SectionKey = "Overview" | "Teams" | "Schools" | "Students" | "Coaches" | "Events" | "Judges" | "Requests" | "Awards" | "Documents";
 

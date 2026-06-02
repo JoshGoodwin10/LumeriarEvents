@@ -1,7 +1,7 @@
 // src/pages/JudgeView.tsx
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { fetchEventDetails, type TeamInEvent } from '../../api/events';
 import { saveScore, fetchScoreHistory, type ScoreHistory } from '../../api/scores';
@@ -157,7 +157,7 @@ function HistoryModal({ scoreId, onClose }: { scoreId: number; onClose: () => vo
     );
 }
 
-// ─── Main Judge View ─────────────────────────────────────────
+// ─── Main Judge View (updated) ────────────────────────────────
 interface ExtendedRound {
     round: number;
     total: number;
@@ -169,7 +169,7 @@ interface ExtendedRound {
         teamwork: number | null;
     };
     score_id: number;
-    is_approved: number;   // unused in UI but present
+    is_approved: number;
 }
 
 interface ExtendedTeamInEvent extends TeamInEvent {
@@ -180,7 +180,8 @@ interface ExtendedTeamInEvent extends TeamInEvent {
 }
 
 export default function JudgeView() {
-    const { userId, token } = useAuth();
+    const { userId, token, logout } = useAuth();
+    const navigate = useNavigate();
     const [eventsHead, setEventsHead] = useState<any[]>([]);
     const [assignments, setAssignments] = useState<{ event: any; team: ExtendedTeamInEvent }[]>([]);
     const [loading, setLoading] = useState(true);
@@ -202,20 +203,17 @@ export default function JudgeView() {
         if (!userId) return;
         const fetchData = async () => {
             try {
-                // Fetch events where judge is head
                 const eventsRes = await fetch(`/api/judges/${userId}/events-as-head`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 const eventsData = await eventsRes.json();
                 setEventsHead(eventsData);
 
-                // Fetch teams-to-score
                 const teamsRes = await fetch(`/api/judges/${userId}/teams-to-score`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 const teamsData = await teamsRes.json();
 
-                // For each team, fetch full event details to get score breakdowns with score_id
                 const assignmentsData = await Promise.all(teamsData.map(async (assignment: any) => {
                     const eventDetails = await fetchEventDetails(assignment.event_id);
                     const team = eventDetails.teams.find(t => t.team_id === assignment.team_id);
@@ -232,13 +230,20 @@ export default function JudgeView() {
         fetchData();
     }, [userId, token]);
 
+    const handleLogout = () => {
+        logout();
+        navigate('/login');
+    };
+
     if (loading) return <div className="td-loading"><span className="spinner-lg" /></div>;
     if (error) return <div className="td-error">{error}</div>;
 
     return (
-        <div className="td-root">
-            <div className="td-header">
+        <div className="judge-view-root">
+            {/* Simple header for judges */}
+            <div className="judge-header">
                 <h1 className="td-title">Judge Dashboard</h1>
+                <button className="btn-secondary" onClick={handleLogout}>Sign out</button>
             </div>
 
             {/* Events where head judge */}
@@ -319,15 +324,19 @@ export default function JudgeView() {
                                             </tr>
                                         );
                                     })}
-
                                 </tbody>
                             </table>
+                            <div style={{ marginTop: '1rem' }}>
+                                <Link to={`/events/${event.event_id}`} className="btn-primary">
+                                    + Add Round / Edit Scores
+                                </Link>
+                            </div>
                         </div>
                     ))
                 )}
             </div>
 
-            {/* Modals */}
+            {/* Modals (unchanged) */}
             {editingScore && (
                 <JudgeScoreModal
                     eventTeamId={editingScore.eventTeamId}
@@ -352,20 +361,66 @@ export default function JudgeView() {
             {viewingHistory && <HistoryModal scoreId={viewingHistory} onClose={() => setViewingHistory(null)} />}
 
             <style>{`
-                .detail-card { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 20px; margin-bottom: 24px; }
-                .detail-card h2 { margin-top: 0; font-size: 1.3rem; }
-                .team-score-section { margin-bottom: 32px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; }
-                .team-score-section h4 { font-family: 'Syne', sans-serif; margin-bottom: 12px; color: #f1f5f9; }
-                .btn-primary { background: #f39c12; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; color: #000; }
-                .spinner-sm { display: inline-block; width: 12px; height: 12px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; }
-                @keyframes spin { to { transform: rotate(360deg); } }
-                .history-item { border-bottom: 1px solid rgba(255,255,255,0.1); padding: 12px 0; }
-                .history-item ul { margin: 6px 0 0 16px; font-size: 12px; color: #94a3b8; }
-                .event-card { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); }
-                .btn-details { background: #60a5fa; color: white; padding: 4px 12px; border-radius: 4px; text-decoration: none; }
-                .btn-icon { background: none; border: none; cursor: pointer; margin-right: 8px; }
+                .judge-view-root {
+                    padding: 2rem;
+                    max-width: 1200px;
+                    margin: 0 auto;
+                }
+                .judge-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 2rem;
+                }
+                .detail-card {
+                    background: var(--bg-card);
+                    border: 1px solid var(--border-medium);
+                    border-radius: 12px;
+                    padding: 20px;
+                    margin-bottom: 24px;
+                }
+                .detail-card h2 {
+                    margin-top: 0;
+                    margin-bottom: 1rem;
+                    font-size: 1.3rem;
+                }
+                .team-score-section {
+                    margin-bottom: 32px;
+                    border-top: 1px solid var(--border-light);
+                    padding-top: 20px;
+                }
+                .event-card {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 12px;
+                    border-bottom: 1px solid var(--border-light);
+                }
+                .btn-details {
+                    background: #60a5fa;
+                    color: white;
+                    padding: 4px 12px;
+                    border-radius: 4px;
+                    text-decoration: none;
+                }
+                .btn-icon {
+                    background: none;
+                    border: none;
+                    cursor: pointer;
+                    margin-right: 8px;
+                }
                 .btn-icon.edit { color: #60a5fa; }
                 .btn-icon.history { color: #8b5cf6; }
+                .btn-primary {
+                    background: var(--color-lumeriar-orange);
+                    border: none;
+                    padding: 6px 12px;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    text-decoration: none;
+                    color: white;
+                    display: inline-block;
+                }
             `}</style>
         </div>
     );

@@ -18,12 +18,12 @@ import RequestsDashboard from './pages/Dashboards/RequestsDashboard';
 import Leaderboards from './pages/PublicPages/Leaderboards';
 import Register from './pages/PublicPages/Register';
 import RequestDetail from './pages/Details/RequestDetail';
-import JudgeView from './pages/JudgeView/JudgeView';
 import AwardsDashboard from './pages/Dashboards/AwardsDashboard';
 import RulesDocs from './pages/PublicPages/RulesDocs';
-import AdminLayout from './pages/Dashboards/AdminLayout';
+import AdminLayout from './layout/AdminLayout';
 import DocumentsDashboard from './pages/Dashboards/DocumentsDashboard';
 import EventsList from './pages/PublicPages/EventsList';
+import JudgeView from './pages/JudgeView/JudgeView';
 
 const HomePage = () => (
   <>
@@ -117,11 +117,11 @@ function App() {
               <Route path="/requests/:id" element={<RequestDetail />} />
               <Route path="/teams/:id" element={<TeamDetail />} />
               <Route path="/events/:id" element={<EventDetail />} />
-              <Route path="/judge/view" element={<JudgeView />} />
               <Route path="/documents" element={<DocumentsDashboard />} />
               {/* Catch‑all inside private area: redirect to dashboard */}
               {/* <Route path="*" element={<Navigate to="/dashboard" replace />} /> */}
             </Route>
+            <Route path="/judge/view" element={<JudgeView />} />
           </Route>
           {/* Optional: catch‑all for non‑private routes (e.g., 404 page) */}
           {/* If you want a 404 for public visitors, add it here (without redirecting to root) */}
