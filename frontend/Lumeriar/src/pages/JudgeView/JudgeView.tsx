@@ -2,225 +2,45 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
-import { createPortal } from 'react-dom';
-import { fetchEventDetails, type TeamInEvent } from '../../api/events';
-import { saveScore, fetchScoreHistory, type ScoreHistory } from '../../api/scores';
 import '../../layout/dashboard.css';
-
-// ─── Score Modal for Judge (no judge selection) ──────────────
-function JudgeScoreModal({
-    eventTeamId,
-    teamName,
-    round,
-    existingScore,
-    judgeId,
-    onClose,
-    onSaved,
-}: {
-    eventTeamId: number;
-    teamName: string;
-    round: number;
-    existingScore?: {
-        score_id: number;
-        technical_score: number | null;
-        innovation_design_score: number | null;
-        theme_score: number | null;
-        real_world_score: number | null;
-        teamwork_score: number | null;
-    };
-    judgeId: number;
-    onClose: () => void;
-    onSaved: () => void;
-}) {
-    const [form, setForm] = useState({
-        technical_score: existingScore?.technical_score ?? "",
-        innovation_design_score: existingScore?.innovation_design_score ?? "",
-        theme_score: existingScore?.theme_score ?? "",
-        real_world_score: existingScore?.real_world_score ?? "",
-        teamwork_score: existingScore?.teamwork_score ?? "",
-        change_reason: "",
-    });
-    const [saving, setSaving] = useState(false);
-    const [error, setError] = useState("");
-
-    const setField = (field: string, value: any) => setForm((f) => ({ ...f, [field]: value }));
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setSaving(true);
-        setError("");
-        try {
-            await saveScore({
-                event_team_id: eventTeamId,
-                round,
-                judge_id: judgeId,
-                technical_score: form.technical_score ? Number(form.technical_score) : null,
-                innovation_design_score: form.innovation_design_score ? Number(form.innovation_design_score) : null,
-                theme_score: form.theme_score ? Number(form.theme_score) : null,
-                real_world_score: form.real_world_score ? Number(form.real_world_score) : null,
-                teamwork_score: form.teamwork_score ? Number(form.teamwork_score) : null,
-                change_reason: form.change_reason,
-            });
-            onSaved();
-        } catch (err: any) {
-            setError(err.message || "Save failed.");
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    return createPortal(
-        <div className="tdm-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
-            <div className="tdm-box">
-                <div className="tdm-head">
-                    <h2 className="tdm-title">{existingScore ? "Edit Score" : "New Score"}</h2>
-                    <button className="tdm-close" onClick={onClose}>×</button>
-                </div>
-                <form onSubmit={handleSubmit} className="tdm-form">
-                    <p>Team: {teamName} | Round {round}</p>
-                    <div className="tdm-row">
-                        <div className="tdm-field">
-                            <label>Technical Score</label>
-                            <input type="number" step="0.01" value={form.technical_score} onChange={(e) => setField("technical_score", e.target.value)} />
-                        </div>
-                        <div className="tdm-field">
-                            <label>Innovation & Design</label>
-                            <input type="number" step="0.01" value={form.innovation_design_score} onChange={(e) => setField("innovation_design_score", e.target.value)} />
-                        </div>
-                    </div>
-                    <div className="tdm-row">
-                        <div className="tdm-field">
-                            <label>Theme</label>
-                            <input type="number" step="0.01" value={form.theme_score} onChange={(e) => setField("theme_score", e.target.value)} />
-                        </div>
-                        <div className="tdm-field">
-                            <label>Real World</label>
-                            <input type="number" step="0.01" value={form.real_world_score} onChange={(e) => setField("real_world_score", e.target.value)} />
-                        </div>
-                    </div>
-                    <div className="tdm-field">
-                        <label>Teamwork</label>
-                        <input type="number" step="0.01" value={form.teamwork_score} onChange={(e) => setField("teamwork_score", e.target.value)} />
-                    </div>
-                    <div className="tdm-field">
-                        <label>Reason for change (optional)</label>
-                        <textarea rows={2} value={form.change_reason} onChange={(e) => setField("change_reason", e.target.value)} />
-                    </div>
-                    {error && <p className="tdm-error">{error}</p>}
-                    <div className="tdm-actions">
-                        <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
-                        <button type="submit" className="btn-primary" disabled={saving}>
-                            {saving ? <span className="spinner-sm" /> : existingScore ? "Update" : "Create"}
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>,
-        document.body
-    );
-}
-
-// ─── Score History Modal (unchanged) ─────────────────────────
-function HistoryModal({ scoreId, onClose }: { scoreId: number; onClose: () => void }) {
-    const [history, setHistory] = useState<ScoreHistory[]>([]);
-    const [loading, setLoading] = useState(true);
-    useEffect(() => {
-        fetchScoreHistory(scoreId).then(setHistory).catch(console.error).finally(() => setLoading(false));
-    }, [scoreId]);
-    return createPortal(
-        <div className="tdm-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
-            <div className="tdm-box tdm-box-sm">
-                <div className="tdm-head">
-                    <h2 className="tdm-title">Score History</h2>
-                    <button className="tdm-close" onClick={onClose}>×</button>
-                </div>
-                {loading ? <div className="td-loading"><span className="spinner-sm" /></div> : history.length === 0 ? <p>No changes recorded.</p> : (
-                    <div className="history-list">
-                        {history.map((h) => (
-                            <div key={h.history_id} className="history-item">
-                                <p><strong>{new Date(h.change_date).toLocaleString()}</strong> – {h.first_name} {h.surname}</p>
-                                <p><em>{h.change_reason}</em></p>
-                                <ul>
-                                    {h.old_technical_score !== h.new_technical_score && <li>Technical: {h.old_technical_score ?? "—"} → {h.new_technical_score ?? "—"}</li>}
-                                    {h.old_innovation_design_score !== h.new_innovation_design_score && <li>Innovation: {h.old_innovation_design_score ?? "—"} → {h.new_innovation_design_score ?? "—"}</li>}
-                                    {h.old_theme_score !== h.new_theme_score && <li>Theme: {h.old_theme_score ?? "—"} → {h.new_theme_score ?? "—"}</li>}
-                                    {h.old_real_world_score !== h.new_real_world_score && <li>Real World: {h.old_real_world_score ?? "—"} → {h.new_real_world_score ?? "—"}</li>}
-                                    {h.old_teamwork_score !== h.new_teamwork_score && <li>Teamwork: {h.old_teamwork_score ?? "—"} → {h.new_teamwork_score ?? "—"}</li>}
-                                </ul>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-        </div>,
-        document.body
-    );
-}
-
-// ─── Main Judge View (updated) ────────────────────────────────
-interface ExtendedRound {
-    round: number;
-    total: number;
-    breakdown: {
-        technical: number | null;
-        innovation_design: number | null;
-        theme: number | null;
-        real_world: number | null;
-        teamwork: number | null;
-    };
-    score_id: number;
-    is_approved: number;
-}
-
-interface ExtendedTeamInEvent extends TeamInEvent {
-    scores: {
-        rounds: ExtendedRound[];
-        overall_total: number;
-    };
-}
 
 export default function JudgeView() {
     const { userId, token, logout } = useAuth();
     const navigate = useNavigate();
     const [eventsHead, setEventsHead] = useState<any[]>([]);
-    const [assignments, setAssignments] = useState<{ event: any; team: ExtendedTeamInEvent }[]>([]);
+    const [scoringEvents, setScoringEvents] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const [editingScore, setEditingScore] = useState<{
-        eventTeamId: number;
-        teamName: string;
-        round: number;
-        scoreId?: number;
-        technical?: number | null;
-        innovation?: number | null;
-        theme?: number | null;
-        realWorld?: number | null;
-        teamwork?: number | null;
-    } | null>(null);
-    const [viewingHistory, setViewingHistory] = useState<number | null>(null);
 
     useEffect(() => {
         if (!userId) return;
         const fetchData = async () => {
             try {
+                // Events where judge is head
                 const eventsRes = await fetch(`/api/judges/${userId}/events-as-head`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 const eventsData = await eventsRes.json();
                 setEventsHead(eventsData);
 
+                // Teams‑to‑score – we only need distinct events
                 const teamsRes = await fetch(`/api/judges/${userId}/teams-to-score`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 const teamsData = await teamsRes.json();
 
-                const assignmentsData = await Promise.all(teamsData.map(async (assignment: any) => {
-                    const eventDetails = await fetchEventDetails(assignment.event_id);
-                    const team = eventDetails.teams.find(t => t.team_id === assignment.team_id);
-                    if (!team) return null;
-                    return { event: eventDetails.event, team: team as ExtendedTeamInEvent };
-                }));
-                setAssignments(assignmentsData.filter(a => a !== null));
+                // Extract unique event info from the assignments
+                const uniqueEvents = new Map();
+                teamsData.forEach((assignment: any) => {
+                    if (!uniqueEvents.has(assignment.event_id)) {
+                        uniqueEvents.set(assignment.event_id, {
+                            event_id: assignment.event_id,
+                            event_name: assignment.event_name,
+                            event_date: assignment.event_date,
+                        });
+                    }
+                });
+                setScoringEvents(Array.from(uniqueEvents.values()));
             } catch (err: any) {
                 setError(err.message);
             } finally {
@@ -240,7 +60,6 @@ export default function JudgeView() {
 
     return (
         <div className="judge-view-root">
-            {/* Simple header for judges */}
             <div className="judge-header">
                 <h1 className="td-title">Judge Dashboard</h1>
                 <button className="btn-secondary" onClick={handleLogout}>Sign out</button>
@@ -259,7 +78,7 @@ export default function JudgeView() {
                                     <h3>{event.name}</h3>
                                     <p>{event.venue} – {new Date(event.date).toLocaleDateString()}</p>
                                 </div>
-                                <Link to={`/events/${event.event_id}?approve=true`} className="btn-details">
+                                <Link to={`/head-judge/${event.event_id}`} className="btn-details">
                                     Review Scores & Approve
                                 </Link>
                             </div>
@@ -268,97 +87,27 @@ export default function JudgeView() {
                 )}
             </div>
 
-            {/* Scorecards for assigned teams */}
+            {/* Events where judge is scoring (any team) */}
             <div className="detail-card">
-                <h2>Teams you are scoring (Scorecards)</h2>
-                {assignments.length === 0 ? (
-                    <p>No team scores recorded yet.</p>
+                <h2>Events you are scoring</h2>
+                {scoringEvents.length === 0 ? (
+                    <p>You are not assigned to score any teams yet.</p>
                 ) : (
-                    assignments.map(({ event, team }) => (
-                        <div key={`${event.event_id}-${team.team_id}`} className="team-score-section">
-                            <h4>{team.team_name} – {event.name} ({new Date(event.date).toLocaleDateString()})</h4>
-                            <table className="td-table">
-                                <thead>
-                                    <tr>
-                                        <th>Round</th><th>Technical</th><th>Innovation</th><th>Theme</th><th>Real World</th><th>Teamwork</th>
-                                        <th>Total</th><th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {team.scores.rounds.map((roundScore) => {
-                                        const b = roundScore.breakdown;
-                                        const total = roundScore.total;
-                                        return (
-                                            <tr key={team.event_team_id + "_" + roundScore.round}>
-                                                <td>{roundScore.round}</td>
-                                                <td>{b.technical ?? "—"}</td>
-                                                <td>{b.innovation_design ?? "—"}</td>
-                                                <td>{b.theme ?? "—"}</td>
-                                                <td>{b.real_world ?? "—"}</td>
-                                                <td>{b.teamwork ?? "—"}</td>
-                                                <td><strong>{total}</strong></td>
-                                                <td>
-                                                    <button
-                                                        className="btn-icon edit"
-                                                        onClick={() => setEditingScore({
-                                                            eventTeamId: team.event_team_id,
-                                                            teamName: team.team_name,
-                                                            round: roundScore.round,
-                                                            scoreId: roundScore.score_id,
-                                                            technical: b.technical,
-                                                            innovation: b.innovation_design,
-                                                            theme: b.theme,
-                                                            realWorld: b.real_world,
-                                                            teamwork: b.teamwork,
-                                                        })}
-                                                    >
-                                                        Edit
-                                                    </button>
-                                                    <button
-                                                        className="btn-icon history"
-                                                        onClick={() => setViewingHistory(roundScore.score_id)}
-                                                    >
-                                                        History
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                            <div style={{ marginTop: '1rem' }}>
-                                <Link to={`/events/${event.event_id}`} className="btn-primary">
-                                    + Add Round / Edit Scores
+                    <div className="events-list">
+                        {scoringEvents.map((event) => (
+                            <div key={event.event_id} className="event-card">
+                                <div className="event-info">
+                                    <h3>{event.event_name}</h3>
+                                    <p>{new Date(event.event_date).toLocaleDateString()}</p>
+                                </div>
+                                <Link to={`/scoring/${event.event_id}`} className="btn-details">
+                                    Enter Scores
                                 </Link>
                             </div>
-                        </div>
-                    ))
+                        ))}
+                    </div>
                 )}
             </div>
-
-            {/* Modals (unchanged) */}
-            {editingScore && (
-                <JudgeScoreModal
-                    eventTeamId={editingScore.eventTeamId}
-                    teamName={editingScore.teamName}
-                    round={editingScore.round}
-                    existingScore={editingScore.scoreId ? {
-                        score_id: editingScore.scoreId,
-                        technical_score: editingScore.technical ?? null,
-                        innovation_design_score: editingScore.innovation ?? null,
-                        theme_score: editingScore.theme ?? null,
-                        real_world_score: editingScore.realWorld ?? null,
-                        teamwork_score: editingScore.teamwork ?? null,
-                    } : undefined}
-                    judgeId={userId!}
-                    onClose={() => setEditingScore(null)}
-                    onSaved={() => {
-                        setEditingScore(null);
-                        window.location.reload();
-                    }}
-                />
-            )}
-            {viewingHistory && <HistoryModal scoreId={viewingHistory} onClose={() => setViewingHistory(null)} />}
 
             <style>{`
                 .judge-view-root {
@@ -384,11 +133,6 @@ export default function JudgeView() {
                     margin-bottom: 1rem;
                     font-size: 1.3rem;
                 }
-                .team-score-section {
-                    margin-bottom: 32px;
-                    border-top: 1px solid var(--border-light);
-                    padding-top: 20px;
-                }
                 .event-card {
                     display: flex;
                     justify-content: space-between;
@@ -399,27 +143,9 @@ export default function JudgeView() {
                 .btn-details {
                     background: #60a5fa;
                     color: white;
-                    padding: 4px 12px;
-                    border-radius: 4px;
-                    text-decoration: none;
-                }
-                .btn-icon {
-                    background: none;
-                    border: none;
-                    cursor: pointer;
-                    margin-right: 8px;
-                }
-                .btn-icon.edit { color: #60a5fa; }
-                .btn-icon.history { color: #8b5cf6; }
-                .btn-primary {
-                    background: var(--color-lumeriar-orange);
-                    border: none;
                     padding: 6px 12px;
                     border-radius: 6px;
-                    cursor: pointer;
                     text-decoration: none;
-                    color: white;
-                    display: inline-block;
                 }
             `}</style>
         </div>

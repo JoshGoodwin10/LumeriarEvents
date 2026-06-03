@@ -24,6 +24,8 @@ import AdminLayout from './layout/AdminLayout';
 import DocumentsDashboard from './pages/Dashboards/DocumentsDashboard';
 import EventsList from './pages/PublicPages/EventsList';
 import JudgeView from './pages/JudgeView/JudgeView';
+import ScoringJudgeView from './pages/JudgeView/ScoringJudgeView';
+import HeadJudgeView from './pages/JudgeView/HeadJudgeView';
 
 const HomePage = () => (
   <>
@@ -122,6 +124,8 @@ function App() {
               {/* <Route path="*" element={<Navigate to="/dashboard" replace />} /> */}
             </Route>
             <Route path="/judge/view" element={<JudgeView />} />
+            <Route path="/scoring/:eventId" element={<ScoringJudgeView />} />
+            <Route path="/head-judge/:id" element={<HeadJudgeView />} />
           </Route>
           {/* Optional: catch‑all for non‑private routes (e.g., 404 page) */}
           {/* If you want a 404 for public visitors, add it here (without redirecting to root) */}
