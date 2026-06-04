@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import '../../layout/events.css'; // reuse existing public page styles
 
 interface Document {
     document_id: number;

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import '../../layout/events.css';
 
 interface Event {
     event_id: number;
@@ -122,15 +121,17 @@ const Events: React.FC = () => {
                 </section>
             )}
 
-            {/* Upcoming Events – NO Scoreboard */}
-            {upcomingEvents.length > 0 && (
-                <section className="events-section">
-                    <h2>Upcoming Events</h2>
-                    <div className="events-list">
-                        {upcomingEvents.map(event => renderEventCard(event, false))}
-                    </div>
-                </section>
-            )}
+            <section className="main-section alabaster">
+                {/* Upcoming Events – NO Scoreboard */}
+                {upcomingEvents.length > 0 && (
+                    <section className="events-section">
+                        <h2>Upcoming Events</h2>
+                        <div className="events-list">
+                            {upcomingEvents.map(event => renderEventCard(event, false))}
+                        </div>
+                    </section>
+                )}
+            </section>
 
             {/* Past Events – shows Scoreboard */}
             {pastEvents.length > 0 && (

@@ -24,24 +24,24 @@ const Header = () => {
                     </button>
                     <ul className="nav" id="mainNav">
                         <li className="nav__item"><Link className="nav__link" to="/">Home</Link></li>
-                        <li className="nav__item"><a className="nav__link" href="/pages/about.html">About</a></li>
+                        <li className="nav__item"><Link className="nav__link" to="/about">About</Link></li>
                         <li className="nav__item nav__item--dropdown">
-                            <a className="nav__link" href="/pages/index.html#services">
+                            <Link className="nav__link" to="/#services">
                                 What We Offer <i className="fa fa-caret-down nav__caret"></i>
-                            </a>
+                            </Link>
                             <ul className="nav__dropdown">
-                                <li className="nav__dropdown-item"><a className="nav__dropdown-link" href="/pages/curriculums.html">Curriculums</a></li>
-                                <li className="nav__dropdown-item"><a className="nav__dropdown-link" href="/pages/clubs.html">Clubs</a></li>
-                                <li className="nav__dropdown-item"><a className="nav__dropdown-link" href="/pages/teacherdevelopment.html">Teacher Development</a></li>
+                                <li className="nav__dropdown-item"><Link className="nav__dropdown-link" to="/curriculums">Curriculums</Link></li>
+                                <li className="nav__dropdown-item"><Link className="nav__dropdown-link" to="/clubs">Clubs</Link></li>
+                                <li className="nav__dropdown-item"><Link className="nav__dropdown-link" to="/teacher-development">Teacher Development</Link></li>
                             </ul>
                         </li>
                         <li className="nav__item nav__item--dropdown">
-                            <Link to="./events-list" className="nav__link">
+                            <Link to="/events-list" className="nav__link">
                                 Events <i className="fa fa-caret-down nav__caret"></i>
                             </Link>
                             <ul className="nav__dropdown">
                                 <li className="nav__dropdown-item">
-                                    <Link to="./events-list" className="nav__dropdown-link">Events</Link>
+                                    <Link to="/events-list" className="nav__dropdown-link">Events</Link>
                                 </li>
                                 <li className="nav__dropdown-item">
                                     <Link to="/leaderboards" className="nav__dropdown-link">Leaderboards</Link>
@@ -51,9 +51,9 @@ const Header = () => {
                                 </li>
                             </ul>
                         </li>
-                        <li className="nav__item"><a className="nav__link" href="/pages/hardwarekits.html">Hardware &amp; Kits</a></li>
-                        <li className="nav__item"><a className="nav__link" href="/pages/partners.html">Partners</a></li>
-                        <li className="nav__item"><a className="nav__link" href="/pages/contact.html">Contact</a></li>
+                        <li className="nav__item"><Link className="nav__link" to="/hardware-kits">Hardware &amp; Kits</Link></li>
+                        <li className="nav__item"><Link className="nav__link" to="/partners">Partners</Link></li>
+                        <li className="nav__item"><Link className="nav__link" to="/contact">Contact</Link></li>
                         <li className="nav__item"><Link className="nav__link" to="/login">Login</Link></li>
                     </ul>
                 </div>
