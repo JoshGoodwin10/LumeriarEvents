@@ -39,50 +39,42 @@ const Curriculums = () => {
                     <h2 className="wow fadeInUp delay-03s">Curriculum by Grade Level</h2>
                     <h6>Tailored learning experiences for every stage of development</h6>
 
-                    <div className="row">
-                        <div className="col-3 wow fadeInUp delay-03s">
-                            <div className="card">
-                                <div className="grade-badge">Grade R-3</div>
-                                <h3 className="card-title">Foundation Phase</h3>
-                                <p className="card-text">Introduction to Coding and Robotics through unplugged, concrete and
-                                    play-based activities that build early computational thinking using pictures, simple
-                                    sequences, and tangible coding before moving to more abstract representations</p>
-                                <ul className="curriculum-features">
-                                    <li>Unplugged coding foundations</li>
-                                    <li>Robotics basics</li>
-                                    <li>Digital concepts early awareness</li>
-                                </ul>
-                            </div>
+                    <div className="grid-3">
+                        <div className="card">
+                            <div className="grade-badge">Grade R-3</div>
+                            <h3 className="card-title">Foundation Phase</h3>
+                            <p className="card-text">Introduction to Coding and Robotics through unplugged, concrete and
+                                play-based activities that build early computational thinking using pictures, simple
+                                sequences, and tangible coding before moving to more abstract representations</p>
+                            <ul className="curriculum-features">
+                                <li>Unplugged coding foundations</li>
+                                <li>Robotics basics</li>
+                                <li>Digital concepts early awareness</li>
+                            </ul>
                         </div>
-
-                        <div className="col-3 wow fadeInUp delay-06s">
-                            <div className="card">
-                                <div className="grade-badge">Grade 4-6</div>
-                                <h3 className="card-title">Intermediate Phase</h3>
-                                <p className="card-text">A structured progression that develops learners to function in a digital
-                                    world by combining logical/computational thinking with practical technology and engineering
-                                    skills.</p>
-                                <ul className="curriculum-features">
-                                    <li>Block based algorithms and coding</li>
-                                    <li>Robotics and Engineering Design Process</li>
-                                    <li>Digital fluency and communication</li>
-                                </ul>
-                            </div>
+                        <div className="card">
+                            <div className="grade-badge">Grade 4-6</div>
+                            <h3 className="card-title">Intermediate Phase</h3>
+                            <p className="card-text">A structured progression that develops learners to function in a digital
+                                world by combining logical/computational thinking with practical technology and engineering
+                                skills.</p>
+                            <ul className="curriculum-features">
+                                <li>Block based algorithms and coding</li>
+                                <li>Robotics and Engineering Design Process</li>
+                                <li>Digital fluency and communication</li>
+                            </ul>
                         </div>
-
-                        <div className="col-3 wow fadeInUp delay-09s">
-                            <div className="card">
-                                <div className="grade-badge">Grade 7-9</div>
-                                <h3 className="card-title">Senior Phase</h3>
-                                <p className="card-text">STEAM-linked subject that combines programming + robotics + digital
-                                    concepts to develop learners into creative, ethical problem-solvers who can design, build,
-                                    and control devices using computational and design thinking.</p>
-                                <ul className="curriculum-features">
-                                    <li>Increased complexity in programming tasks</li>
-                                    <li>Incorporating sensors and actuators in robotics projects</li>
-                                    <li>Team-based challenges</li>
-                                </ul>
-                            </div>
+                        <div className="card">
+                            <div className="grade-badge">Grade 7-9</div>
+                            <h3 className="card-title">Senior Phase</h3>
+                            <p className="card-text">STEAM-linked subject that combines programming + robotics + digital
+                                concepts to develop learners into creative, ethical problem-solvers who can design, build,
+                                and control devices using computational and design thinking.</p>
+                            <ul className="curriculum-features">
+                                <li>Increased complexity in programming tasks</li>
+                                <li>Incorporating sensors and actuators in robotics projects</li>
+                                <li>Team-based challenges</li>
+                            </ul>
                         </div>
                     </div>
                 </div>
@@ -92,22 +84,21 @@ const Curriculums = () => {
             <section className="main-section alabaster" id="features">
                 <div className="container">
                     <h2 className="wow fadeInUp delay-03s">What's Included</h2>
-                    <div className="row">
-                        <div className="col-3 wow fadeInUp delay-06s">
+
+                    <div className="grid-3">
+                        <div className="card">
                             <div className="feature-icon">📝</div>
                             <h3 className="card-title">Curriculum</h3>
                             <p className="card-text">Complete curriculum packages for each grade phase, including learning
                                 objectives, assessment criteria, and teacher support materials.</p>
                         </div>
-
-                        <div className="col-3 wow fadeInUp delay-04s">
+                        <div className="card">
                             <div className="feature-icon">📚</div>
                             <h3 className="card-title">Lesson Plans</h3>
                             <p className="card-text">Step-by-step teaching guides with clear learning objectives, activities, and
                                 timing suggestions for each session.</p>
                         </div>
-
-                        <div className="col-3 wow fadeInUp delay-1s">
+                        <div className="card">
                             <div className="feature-icon">🎯</div>
                             <h3 className="card-title">CAPS Alignment</h3>
                             <p className="card-text">Every lesson mapped to specific CAPS curriculum outcomes ensuring compliance

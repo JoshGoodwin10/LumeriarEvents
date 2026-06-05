@@ -94,46 +94,35 @@ const HomePage = () => (
     <section className="main-section" id="services">
       <div className="container">
         <h2 className="wow fadeIn delay-05s">What We Offer</h2>
-        <div className="row">
-          <div className="col-4">
-            <div className="card wow fadeIn delay-05s">
-              <h3 className="card-title mb-3">Curriculums</h3>
-              <img src="../images/curriculums book.png" alt="Curriculums" className="card-img-top"></img>
-              <p className="card-text mb-4">CAPS aligned curriculums and teaching plans catering for Grade R to
-                Grade 12 learners</p>
-              <a href="/pages/curriculums.html" className="btn">Our Curriculms</a>
-            </div>
+        <div className="grid-4">
+          <div className="card wow fadeIn delay-05s">
+            <h3 className="card-title mb-3">Curriculums</h3>
+            <img src="../images/curriculums book.png" alt="Curriculums" className="card-img-top"></img>
+            <p className="card-text mb-4">CAPS aligned curriculums and teaching plans catering for Grade R to
+              Grade 12 learners</p>
+            <a href="/pages/curriculums.html" className="btn">Our Curriculms</a>
           </div>
-
-          <div className="col-4">
-            <div className="card wow fadeIn delay-08s">
-              <h3 className="card-title mb-3">Hardware and Kits</h3>
-              <img src="../images/robot arm.png" alt="Robot Arm" className="card-img-top"></img>
-              <p className="card-text mb-4">Durable, classroom-ready robotics kits designed for repeated use and
-                easy classroom management.</p>
-              <a href="/pages/hardwarekits.html" className="btn">See Our Kits</a>
-            </div>
+          <div className="card wow fadeIn delay-08s">
+            <h3 className="card-title mb-3">Hardware and Kits</h3>
+            <img src="../images/robot arm.png" alt="Robot Arm" className="card-img-top"></img>
+            <p className="card-text mb-4">Durable, classroom-ready robotics kits designed for repeated use and
+              easy classroom management.</p>
+            <a href="/pages/hardwarekits.html" className="btn">See Our Kits</a>
           </div>
-
-          <div className="col-4">
-            <div className="card wow fadeIn delay-1s">
-              <h3 className="card-title mb-3">Teacher Development</h3>
-              <img src="../images/coding.png" alt="Teacher Development" className="card-img-top"></img>
-              <p className="card-text mb-4">Practical training, and classroom resources that help teachers feel
-                confident leading robotics.</p>
-              <a href="/pages/teacherdevelopment.html" className="btn">Teacher Development</a>
-            </div>
+          <div className="card wow fadeIn delay-1s">
+            <h3 className="card-title mb-3">Teacher Development</h3>
+            <img src="../images/coding.png" alt="Teacher Development" className="card-img-top"></img>
+            <p className="card-text mb-4">Practical training, and classroom resources that help teachers feel
+              confident leading robotics.</p>
+            <a href="/pages/teacherdevelopment.html" className="btn">Teacher Development</a>
           </div>
-
-          <div className="col-4">
-            <div className="card wow fadeIn delay-1s">
-              <h3 className="card-title mb-3">Clubs</h3>
-              <img src="../images/book-club.png" alt="Clubs" className="card-img-top"></img>
-              <p className="card-text mb-4">After school robotics clubs that foster innovation and collaboration
-                in preparation for worldwide competitions.
-              </p>
-              <a href="/pages/clubs.html" className="btn">Our Clubs</a>
-            </div>
+          <div className="card wow fadeIn delay-1s">
+            <h3 className="card-title mb-3">Clubs</h3>
+            <img src="../images/book-club.png" alt="Clubs" className="card-img-top"></img>
+            <p className="card-text mb-4">After school robotics clubs that foster innovation and collaboration
+              in preparation for worldwide competitions.
+            </p>
+            <a href="/pages/clubs.html" className="btn">Our Clubs</a>
           </div>
         </div>
       </div>
@@ -176,41 +165,32 @@ const HomePage = () => (
       <div className="container">
         <h2>Our Partners</h2>
         <h6>Trusted partnerships that drive success</h6>
-        <div className="row">
-          <div className="col-4">
-            <div className="card bg-light wow fadeInUp delay-03s">
-              <div className="card-img-circle">
-                <img src="../images/The_Durban_University_of_Technology_new_log.png"
-                  alt="Durban University of Technology" />
-              </div>
-              <h3 className="card-title">Durban University of Technology</h3>
+        <div className="grid-4">
+          <div className="card bg-light wow fadeInUp delay-03s">
+            <div className="card-img-circle">
+              <img src="../images/The_Durban_University_of_Technology_new_log.png"
+                alt="Durban University of Technology" />
             </div>
+            <h3 className="card-title">Durban University of Technology</h3>
           </div>
-          <div className="col-4">
-            <div className="card bg-light wow fadeInUp delay-06s">
-              <div className="card-img-circle">
-                <img src="../images/DHS-Logo-3-1 (1).png" alt="Durban High School" />
-              </div>
-              <h3 className="card-title">Durban High School</h3>
+          <div className="card bg-light wow fadeInUp delay-06s">
+            <div className="card-img-circle">
+              <img src="../images/DHS-Logo-3-1 (1).png" alt="Durban High School" />
             </div>
+            <h3 className="card-title">Durban High School</h3>
           </div>
-          <div className="col-4">
-            <div className="card bg-light wow fadeInUp delay-09s">
-              <div className="card-img-circle">
-                <img src="../images/conlog.png" alt="Conlog" />
-              </div>
-              <h3 className="card-title">Conlog</h3>
+          <div className="card bg-light wow fadeInUp delay-09s">
+            <div className="card-img-circle">
+              <img src="../images/conlog.png" alt="Conlog" />
             </div>
+            <h3 className="card-title">Conlog</h3>
           </div>
-          <div className="col-4">
-            <div className="card bg-light wow fadeInUp delay-12s">
-              <div className="card-img-circle">
-                <img src="../images/moses.png" alt="Moses Kotane Institute" />
-              </div>
-              <h3 className="card-title">Moses Kotane Institute</h3>
+          <div className="card bg-light wow fadeInUp delay-12s">
+            <div className="card-img-circle">
+              <img src="../images/moses.png" alt="Moses Kotane Institute" />
             </div>
+            <h3 className="card-title">Moses Kotane Institute</h3>
           </div>
-
         </div>
         <a href="/pages/partners.html" className="btn">View Our Partners</a>
       </div>
