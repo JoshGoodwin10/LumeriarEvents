@@ -26,17 +26,17 @@ const About = () => {
             <section className="main-section alabaster" id="about-page">
                 <div className="container">
                     <div className="row align-center">
-                        <div className="col-2">
+                        <div className="grid-2">
                             <figure className="wow fadeInLeft">
                                 <img src="../images/CAO presentation.jpeg" alt="Students working with robotics" className="img-fluid" />
                             </figure>
-                        </div>
-                        <div className="col-2 featured-work">
-                            <h2>Who We Are</h2>
-                            <p>Lumeriar Robotics is an educational innovation organisation based in Durban, South Africa, focused
-                                on preparing students for a future shaped by AI and automation. We design CAPS-aligned curriculums, durable
-                                classroom-ready robotics kits, and practical teacher development programmes that bring hands-on learning
-                                into every classroom.</p>
+                            <div className="featured-work">
+                                <h2>Who We Are</h2>
+                                <p>Lumeriar Robotics is an educational innovation organisation based in Durban, South Africa, focused
+                                    on preparing students for a future shaped by AI and automation. We design CAPS-aligned curriculums, durable
+                                    classroom-ready robotics kits, and practical teacher development programmes that bring hands-on learning
+                                    into every classroom.</p>
+                            </div>
                         </div>
                     </div>
                 </div>

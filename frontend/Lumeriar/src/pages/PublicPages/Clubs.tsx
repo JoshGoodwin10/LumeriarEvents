@@ -15,22 +15,23 @@ const Clubs = () => {
                 <div className="container">
                     <h2 className="wow fadeInUp delay-03s">More Than Just a Club</h2>
                     <div className="row align-center">
-                        <div className="col-2">
+                        <div className="grid-2">
                             <figure className="wow fadeInLeft delay-04s">
                                 <img src="../images/working on robot hands.jpeg" alt="Students in robotics club" className="img-fluid" />
                             </figure>
+                            <div className="wow fadeInRight delay-04s">
+                                <p className="mb-4">Our school robotics clubs provide a structured, engaging after-school environment
+                                    where students explore coding, engineering, and problem-solving through hands-on robotics
+                                    projects. From complete beginners to advanced builders, every student finds their place in our
+                                    inclusive, collaborative club sessions.</p>
+                                <p className="mb-4">We handle everything—from curriculum planning and kit provision to coach training
+                                    and competition preparation—so your school can launch and sustain a thriving robotics club with
+                                    minimal administrative overhead.</p>
+                                <p>Whether you're starting from scratch or looking to enhance an existing programme, we tailor our
+                                    club offerings to your school's needs, schedule, and goals.</p>
+                            </div>
                         </div>
-                        <div className="col-2 wow fadeInRight delay-04s">
-                            <p className="mb-4">Our school robotics clubs provide a structured, engaging after-school environment
-                                where students explore coding, engineering, and problem-solving through hands-on robotics
-                                projects. From complete beginners to advanced builders, every student finds their place in our
-                                inclusive, collaborative club sessions.</p>
-                            <p className="mb-4">We handle everything—from curriculum planning and kit provision to coach training
-                                and competition preparation—so your school can launch and sustain a thriving robotics club with
-                                minimal administrative overhead.</p>
-                            <p>Whether you're starting from scratch or looking to enhance an existing programme, we tailor our
-                                club offerings to your school's needs, schedule, and goals.</p>
-                        </div>
+
                     </div>
                 </div>
             </section>

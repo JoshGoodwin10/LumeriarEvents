@@ -131,32 +131,33 @@ const HomePage = () => (
     <section className="main-section" id="about">
       <div className="container">
         <div className="row align-center">
-          <div className="col-2">
+          <div className="grid-2">
             <figure className="wow fadeInLeft">
               <img src="../images/Event Photo.jpeg" alt="Students working with robotics" className="img-fluid"></img>
             </figure>
-          </div>
-          <div className="col-2 featured-work">
-            <h2 className="text-center">About Lumeriar</h2>
-            <div className="featured-box">
-              <div className="featured-box-col2 wow fadeInRight delay-02s">
-                <h3 className="text-center">Vision:</h3>
-                <p>To become a leading driver of educational innovation, empowering
-                  students with industry-relevant skills and knowledge to thrive in an AI-driven world</p>
+            <div className="featured-work">
+              <h2 className="text-center">About Lumeriar</h2>
+              <div className="featured-box">
+                <div className="featured-box-col2 wow fadeInRight delay-02s">
+                  <h3 className="text-center">Vision:</h3>
+                  <p>To become a leading driver of educational innovation, empowering
+                    students with industry-relevant skills and knowledge to thrive in an AI-driven world</p>
+                </div>
+              </div>
+              <div className="featured-box">
+                <div className="featured-box-col2 wow fadeInRight delay-04s">
+                  <h3 className="text-center">Mission:</h3>
+                  <p>To implement state-of-the-art vocational education programmes that blend academic
+                    excellence with practical industry experience, preparing students for employment and
+                    further education</p>
+                </div>
+              </div>
+              <div className="text-center">
+                <a href="/pages/about.html" style={{ alignItems: 'right' }} className="btn">About Us</a>
               </div>
             </div>
-            <div className="featured-box">
-              <div className="featured-box-col2 wow fadeInRight delay-04s">
-                <h3 className="text-center">Mission:</h3>
-                <p>To implement state-of-the-art vocational education programmes that blend academic
-                  excellence with practical industry experience, preparing students for employment and
-                  further education</p>
-              </div>
-            </div>
-            <div className="text-center">
-              <a href="/pages/about.html" style={{ alignItems: 'right' }} className="btn">About Us</a>
-            </div>
           </div>
+
         </div>
       </div>
     </section>

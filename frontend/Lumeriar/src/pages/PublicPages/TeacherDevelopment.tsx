@@ -16,19 +16,20 @@ const TeacherDevelopment = () => {
                 <div className="container">
                     <h2 className="wow fadeInUp delay-03s">Supporting Teachers Every Step</h2>
                     <div className="row align-center">
-                        <div className="col-2">
+                        <div className="grid-2">
                             <figure className="wow fadeInLeft delay-04s">
                                 <img src="../images/car on table.jpeg" alt="Teacher training" className="img-fluid" />
                             </figure>
+                            <div className="wow fadeInRight delay-04s">
+                                <p className="mb-4">We believe that confident, well-supported teachers are the key to successful
+                                    robotics education. Our teacher development programmes provide the technical knowledge,
+                                    pedagogical strategies, and ongoing support educators need to deliver engaging, effective
+                                    robotics lessons—even without prior coding or engineering experience.</p>
+                                <p>From initial onboarding to advanced facilitation techniques, we walk alongside teachers,
+                                    building their capacity and confidence to inspire the next generation of innovators.</p>
+                            </div>
                         </div>
-                        <div className="col-2 wow fadeInRight delay-04s">
-                            <p className="mb-4">We believe that confident, well-supported teachers are the key to successful
-                                robotics education. Our teacher development programmes provide the technical knowledge,
-                                pedagogical strategies, and ongoing support educators need to deliver engaging, effective
-                                robotics lessons—even without prior coding or engineering experience.</p>
-                            <p>From initial onboarding to advanced facilitation techniques, we walk alongside teachers,
-                                building their capacity and confidence to inspire the next generation of innovators.</p>
-                        </div>
+
                     </div>
                 </div>
             </section>

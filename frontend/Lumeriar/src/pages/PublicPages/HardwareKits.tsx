@@ -16,20 +16,21 @@ const HardwareKits = () => {
                 <div className="container">
                     <h2 className="wow fadeInUp delay-03s">Built for the Classroom</h2>
                     <div className="row align-center">
-                        <div className="col-2 wow fadeInRight delay-04s">
-                            <p className="mb-4">Our robotics kits are designed specifically for educational use, prioritizing
-                                durability, ease of use, and pedagogical value. Our kits withstand
-                                repeated classroom use, support multiple learning styles, and integrate seamlessly with our
-                                CAPS-aligned curriculums.</p>
-                            <p>Each kit includes all necessary components, clear assembly instructions, and robust storage
-                                solutions to maximize classroom efficiency and minimize setup time.</p>
-                        </div>
-                        <div className="col-2">
+                        <div className="grid-2 wow fadeInRight delay-04s">
+                            <div className="">
+                                <p className="mb-4">Our robotics kits are designed specifically for educational use, prioritizing
+                                    durability, ease of use, and pedagogical value. Our kits withstand
+                                    repeated classroom use, support multiple learning styles, and integrate seamlessly with our
+                                    CAPS-aligned curriculums.</p>
+                                <p>Each kit includes all necessary components, clear assembly instructions, and robust storage
+                                    solutions to maximize classroom efficiency and minimize setup time.</p>
+                            </div>
                             <figure className="wow fadeInLeft delay-04s">
                                 <img src="../images/laptop and robot.jpeg" alt="Robotics kit" className="img-fluid" />
                             </figure>
                         </div>
                     </div>
+
                 </div>
             </section>
 
@@ -39,8 +40,8 @@ const HardwareKits = () => {
                     <h2 className="wow fadeInUp delay-03s">Why Our Kits Stand Out</h2>
                     <h6>Designed with teachers and students in mind</h6>
 
-                    <div className="row">
-                        <div className="col-3 wow fadeInUp delay-03s">
+                    <div className="grid-3">
+                        <div className="wow fadeInUp delay-03s">
                             <div className="card no-hover">
                                 <div className="feature-icon">🔧</div>
                                 <h3 className="card-title">Classroom Durable</h3>
@@ -49,7 +50,7 @@ const HardwareKits = () => {
                             </div>
                         </div>
 
-                        <div className="col-3 wow fadeInUp delay-06s">
+                        <div className="wow fadeInUp delay-06s">
                             <div className="card no-hover">
                                 <div className="feature-icon">⚡</div>
                                 <h3 className="card-title">Easy Assembly</h3>
@@ -58,7 +59,7 @@ const HardwareKits = () => {
                             </div>
                         </div>
 
-                        <div className="col-3 wow fadeInUp delay-09s">
+                        <div className="wow fadeInUp delay-09s">
                             <div className="card no-hover">
                                 <div className="feature-icon">📦</div>
                                 <h3 className="card-title">Endless Versatility</h3>
@@ -77,8 +78,8 @@ const HardwareKits = () => {
                     <h2 className="wow fadeInUp delay-03s">Kit Range</h2>
                     <h6>Scalable solutions from beginner to advanced</h6>
 
-                    <div className="row">
-                        <div className="col-3 wow fadeInUp delay-06s">
+                    <div className="grid-3">
+                        <div className="wow fadeInUp delay-06s">
                             <div className="card">
                                 <h3 className="card-title">Discovery Kit</h3>
                                 <div className="kit-level">Foundation Phase</div>
@@ -92,7 +93,7 @@ const HardwareKits = () => {
                             </div>
                         </div>
 
-                        <div className="col-3 wow fadeInUp delay-06s">
+                        <div className="wow fadeInUp delay-06s">
                             <div className="card">
                                 <h3 className="card-title">Explorer Kit</h3>
                                 <div className="kit-level">Intermediate Phase</div>
@@ -106,7 +107,7 @@ const HardwareKits = () => {
                             </div>
                         </div>
 
-                        <div className="col-3 wow fadeInUp delay-06s">
+                        <div className="wow fadeInUp delay-06s">
                             <div className="card">
                                 <h3 className="card-title">Innovator Kit</h3>
                                 <div className="kit-level">Senior Phase</div>
@@ -128,17 +129,17 @@ const HardwareKits = () => {
                 <div className="container">
                     <h2 className="wow fadeInUp delay-03s">Comprehensive Support</h2>
                     <div className="row">
-                        <div className="col-2 wow fadeInUp delay-04s">
+                        <div className="wow fadeInUp delay-04s">
                             <h3 className="card-title mb-3">Warranty & Replacement</h3>
                             <p className="card-text">All kits include a 2-year warranty with free component replacement for
                                 manufacturing defects. Quick turnaround ensures minimal classroom disruption.</p>
                         </div>
-
-                        <div className="col-2 wow fadeInUp delay-06s">
+                        <div className="wow fadeInUp delay-06s">
                             <h3 className="card-title mb-3">Technical Assistance</h3>
                             <p className="card-text">Access to dedicated support team via email and phone call. We provide
                                 troubleshooting guides, tutorials, and direct technical help when needed.</p>
                         </div>
+
                     </div>
                 </div>
             </section>

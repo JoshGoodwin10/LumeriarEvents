@@ -16,19 +16,20 @@ const Curriculums = () => {
                 <div className="container">
                     <h2 className="wow fadeInUp delay-03s">A Comprehensive Robotics Education</h2>
                     <div className="row align-center">
-                        <div className="col-2">
+                        <div className="grid-2">
                             <figure className="wow fadeInLeft delay-04s">
                                 <img src="../images/Grade 8 Cover.png" alt="Curriculum materials" className="img-fluid" style={{ borderRadius: '20px' }} />
                             </figure>
+                            <div className="wow fadeInRight delay-04s">
+                                <p className="mb-4">Our curriculums are meticulously designed to align with the South African CAPS
+                                    framework, ensuring that robotics and coding education integrates seamlessly with existing
+                                    educational standards. From foundational concepts in early grades to advanced programming and
+                                    AI applications in high school, we provide a complete learning journey.</p>
+                                <p>Each curriculum module includes detailed lesson plans, student worksheets, assessment rubrics,
+                                    and teacher guides to ensure successful implementation in any classroom setting.</p>
+                            </div>
                         </div>
-                        <div className="col-2 wow fadeInRight delay-04s">
-                            <p className="mb-4">Our curriculums are meticulously designed to align with the South African CAPS
-                                framework, ensuring that robotics and coding education integrates seamlessly with existing
-                                educational standards. From foundational concepts in early grades to advanced programming and
-                                AI applications in high school, we provide a complete learning journey.</p>
-                            <p>Each curriculum module includes detailed lesson plans, student worksheets, assessment rubrics,
-                                and teacher guides to ensure successful implementation in any classroom setting.</p>
-                        </div>
+
                     </div>
                 </div>
             </section>
