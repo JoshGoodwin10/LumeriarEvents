@@ -43,14 +43,10 @@ body {
   padding: 0;
 }
 
-h1,
-h2 {
+h1 {
   font-family: var(--heading);
   font-weight: 500;
   color: var(--text-h);
-}
-
-h1 {
   font-size: 56px;
   letter-spacing: -1.68px;
   margin: 32px 0;
@@ -58,24 +54,6 @@ h1 {
   @media (max-width: 1024px) {
     font-size: 36px;
     margin: 20px 0;
-  }
-}
-
-h2 {
-  color: transparent;
-  background: linear-gradient(to bottom, var(--color-secondary), var(--color-secondary-dark));
-  font-family: 'Montserrat', sans-serif;
-  font-size: 40px;
-  font-weight: bolder;
-  letter-spacing: -1px;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  font-weight: 700;
-  text-align: center;
-
-  @media (max-width: 1024px) {
-    font-size: 20px;
   }
 }
 

@@ -11,3 +11,8 @@ createRoot(document.getElementById('root')!).render(
     </BrowserRouter>
   </StrictMode>,
 )
+
+// Initialize WOW.js after the DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+  new (window as any).WOW().init();
+});

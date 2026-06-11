@@ -7,17 +7,17 @@ const HardwareKits = () => {
             {/* Hero */}
             <header className="heronoimage" id="hero">
                 <div className="container">
-                    <h1 className="animated fadeInDown delay-07s">Durable Classroom Kits</h1>
+                    <h1>Durable Classroom Kits</h1>
                 </div>
             </header>
 
             {/* Overview Section */}
             <section className="main-section alabaster" id="overview">
                 <div className="container">
-                    <h2 className="wow fadeInUp delay-03s">Built for the Classroom</h2>
+                    <h2 data-aos="fade-up" data-aos-delay="300">Built for the Classroom</h2>
                     <div className="row align-center">
-                        <div className="grid-2 wow fadeInRight delay-04s">
-                            <div className="">
+                        <div className="grid-2">
+                            <div data-aos="fade-right" data-aos-delay="400">
                                 <p className="mb-4">Our robotics kits are designed specifically for educational use, prioritizing
                                     durability, ease of use, and pedagogical value. Our kits withstand
                                     repeated classroom use, support multiple learning styles, and integrate seamlessly with our
@@ -25,23 +25,22 @@ const HardwareKits = () => {
                                 <p>Each kit includes all necessary components, clear assembly instructions, and robust storage
                                     solutions to maximize classroom efficiency and minimize setup time.</p>
                             </div>
-                            <figure className="wow fadeInLeft delay-04s">
+                            <figure data-aos="fade-left" data-aos-delay="400">
                                 <img src="../images/laptop and robot.jpeg" alt="Robotics kit" className="img-fluid" />
                             </figure>
                         </div>
                     </div>
-
                 </div>
             </section>
 
             {/* Kit Features Section */}
             <section className="main-section" id="features">
                 <div className="container">
-                    <h2 className="wow fadeInUp delay-03s">Why Our Kits Stand Out</h2>
-                    <h6>Designed with teachers and students in mind</h6>
+                    <h2 data-aos="fade-up" data-aos-delay="300">Why Our Kits Stand Out</h2>
+                    <h6 data-aos="fade-up" data-aos-delay="400">Designed with teachers and students in mind</h6>
 
                     <div className="grid-3">
-                        <div className="wow fadeInUp delay-03s">
+                        <div data-aos="fade-up" data-aos-delay="300">
                             <div className="card no-hover">
                                 <div className="feature-icon">🔧</div>
                                 <h3 className="card-title">Classroom Durable</h3>
@@ -49,8 +48,7 @@ const HardwareKits = () => {
                                     designed to withstand hundreds of assembly cycles without wear or breakage.</p>
                             </div>
                         </div>
-
-                        <div className="wow fadeInUp delay-06s">
+                        <div data-aos="fade-up" data-aos-delay="600">
                             <div className="card no-hover">
                                 <div className="feature-icon">⚡</div>
                                 <h3 className="card-title">Easy Assembly</h3>
@@ -58,8 +56,7 @@ const HardwareKits = () => {
                                     students spend time learning, not struggling with complicated builds.</p>
                             </div>
                         </div>
-
-                        <div className="wow fadeInUp delay-09s">
+                        <div data-aos="fade-up" data-aos-delay="900">
                             <div className="card no-hover">
                                 <div className="feature-icon">📦</div>
                                 <h3 className="card-title">Endless Versatility</h3>
@@ -75,11 +72,11 @@ const HardwareKits = () => {
             {/* Kit Levels Section */}
             <section className="main-section alabaster" id="kit-levels">
                 <div className="container">
-                    <h2 className="wow fadeInUp delay-03s">Kit Range</h2>
-                    <h6>Scalable solutions from beginner to advanced</h6>
+                    <h2 data-aos="fade-up" data-aos-delay="300">Kit Range</h2>
+                    <h6 data-aos="fade-up" data-aos-delay="400">Scalable solutions from beginner to advanced</h6>
 
                     <div className="grid-3">
-                        <div className="wow fadeInUp delay-06s">
+                        <div data-aos="fade-up" data-aos-delay="200">
                             <div className="card">
                                 <h3 className="card-title">Discovery Kit</h3>
                                 <div className="kit-level">Foundation Phase</div>
@@ -92,8 +89,7 @@ const HardwareKits = () => {
                                 </ul>
                             </div>
                         </div>
-
-                        <div className="wow fadeInUp delay-06s">
+                        <div data-aos="fade-up" data-aos-delay="400">
                             <div className="card">
                                 <h3 className="card-title">Explorer Kit</h3>
                                 <div className="kit-level">Intermediate Phase</div>
@@ -106,8 +102,7 @@ const HardwareKits = () => {
                                 </ul>
                             </div>
                         </div>
-
-                        <div className="wow fadeInUp delay-06s">
+                        <div data-aos="fade-up" data-aos-delay="600">
                             <div className="card">
                                 <h3 className="card-title">Innovator Kit</h3>
                                 <div className="kit-level">Senior Phase</div>
@@ -127,19 +122,18 @@ const HardwareKits = () => {
             {/* Support Section */}
             <section className="main-section" id="support">
                 <div className="container">
-                    <h2 className="wow fadeInUp delay-03s">Comprehensive Support</h2>
+                    <h2 data-aos="fade-up" data-aos-delay="300">Comprehensive Support</h2>
                     <div className="row">
-                        <div className="wow fadeInUp delay-04s">
+                        <div className="wow fadeInUp delay-04s" data-aos="fade-up" data-aos-delay="400">
                             <h3 className="card-title mb-3">Warranty & Replacement</h3>
                             <p className="card-text">All kits include a 2-year warranty with free component replacement for
                                 manufacturing defects. Quick turnaround ensures minimal classroom disruption.</p>
                         </div>
-                        <div className="wow fadeInUp delay-06s">
+                        <div className="wow fadeInUp delay-06s" data-aos="fade-up" data-aos-delay="600">
                             <h3 className="card-title mb-3">Technical Assistance</h3>
                             <p className="card-text">Access to dedicated support team via email and phone call. We provide
                                 troubleshooting guides, tutorials, and direct technical help when needed.</p>
                         </div>
-
                     </div>
                 </div>
             </section>
@@ -148,7 +142,7 @@ const HardwareKits = () => {
             <section className="main-section alabaster" id="cta">
                 <div className="container">
                     <div className="row">
-                        <div className="col-12 text-center wow fadeInUp delay-04s">
+                        <div className="col-12 text-center" data-aos="fade-up" data-aos-delay="400">
                             <h2>Equip Your Classroom Today</h2>
                             <p className="mb-4">Request a quote, schedule a demo, or order sample kits for evaluation.</p>
                             <Link to="/contact" className="btn">Get Started</Link>

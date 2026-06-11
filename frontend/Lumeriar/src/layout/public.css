@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800;900&family=Open+Sans:wght@300;400;600;700&display=swap');
+
 /* ============================================
    Variables & Reset
    ============================================ */
@@ -83,7 +85,7 @@ h1.alternate {
 
 h2 {
     font-size: 34px;
-    font-weight: 700;
+    font-weight: bold !important;
     letter-spacing: -1px;
     padding-top: 20px;
     padding-bottom: 30px;
@@ -181,10 +183,18 @@ p {
     grid-template-columns: repeat(2, 1fr);
     gap: 30px;
     margin: 0 -15px;
+    align-items: center;
 }
 
 .grid-2>* {
     margin-bottom: 30px;
+}
+
+.grid-2 figure img {
+    max-width: 100%;
+    max-height: 400px;
+    width: auto;
+    height: auto;
 }
 
 @media (max-width: 768px) {

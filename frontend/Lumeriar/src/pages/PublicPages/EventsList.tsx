@@ -1,3 +1,4 @@
+// src/pages/PublicPages/EventsList.tsx (or Events.tsx – adjust path accordingly)
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -36,21 +37,18 @@ const Events: React.FC = () => {
         fetchEvents();
     }, []);
 
-    // Helper: get today's date in YYYY-MM-DD without time
     const getTodayDate = () => {
         const today = new Date();
         return today.toISOString().split('T')[0];
     };
 
-    // Categorise events
     const today = getTodayDate();
     const ongoingEvents = events.filter(e => e.date === today);
     const upcomingEvents = events.filter(e => e.date > today);
     const pastEvents = events.filter(e => e.date < today);
 
     const renderEventCard = (event: Event, showScoreboard: boolean) => (
-        <div key={event.event_id} className="event-card">
-            {/* Date box */}
+        <div key={event.event_id} className="event-card" data-aos="fade-up" data-aos-delay="100">
             <div className="event-date-box">
                 <div className="event-date-month">
                     {new Date(event.date).toLocaleString('default', { month: 'short' }).toUpperCase()}
@@ -63,7 +61,6 @@ const Events: React.FC = () => {
                 </div>
             </div>
 
-            {/* Event info */}
             <div className="event-info">
                 <h3>{event.name}</h3>
                 <p>{event.venue || 'Venue TBA'}</p>
@@ -76,28 +73,18 @@ const Events: React.FC = () => {
                 </div>
             </div>
 
-            {/* Action buttons */}
             <div className="event-card__actions">
                 {event.registration_open && (
-                    <button
-                        className="btn-register"
-                        onClick={() => navigate(`/register?event=${event.event_id}`)}
-                    >
+                    <button className="btn-register" onClick={() => navigate(`/register?event=${event.event_id}`)}>
                         Register
                     </button>
                 )}
                 {showScoreboard && (
-                    <button
-                        className="btn-scoreboard"
-                        onClick={() => navigate(`/leaderboard/${event.event_id}`)}
-                    >
+                    <button className="btn-scoreboard" onClick={() => navigate(`/leaderboard/${event.event_id}`)}>
                         Scoreboard
                     </button>
                 )}
-                <button
-                    className="btn-details"
-                    onClick={() => setSelectedEvent(event)}
-                >
+                <button className="btn-details" onClick={() => setSelectedEvent(event)}>
                     Details
                 </button>
             </div>
@@ -109,12 +96,11 @@ const Events: React.FC = () => {
 
     return (
         <div className="events-page">
-            <h1>Events</h1>
+            <h1 data-aos="fade-up">Events</h1>
 
-            {/* Ongoing Events – shows Scoreboard */}
             {ongoingEvents.length > 0 && (
                 <section className="events-section">
-                    <h2>Ongoing Events</h2>
+                    <h2 data-aos="fade-up" data-aos-delay="200">Ongoing Events</h2>
                     <div className="events-list">
                         {ongoingEvents.map(event => renderEventCard(event, true))}
                     </div>
@@ -122,10 +108,9 @@ const Events: React.FC = () => {
             )}
 
             <section className="main-section alabaster">
-                {/* Upcoming Events – NO Scoreboard */}
                 {upcomingEvents.length > 0 && (
                     <section className="events-section">
-                        <h2>Upcoming Events</h2>
+                        <h2 data-aos="fade-up" data-aos-delay="200">Upcoming Events</h2>
                         <div className="events-list">
                             {upcomingEvents.map(event => renderEventCard(event, false))}
                         </div>
@@ -133,17 +118,15 @@ const Events: React.FC = () => {
                 )}
             </section>
 
-            {/* Past Events – shows Scoreboard */}
             {pastEvents.length > 0 && (
                 <section className="events-section">
-                    <h2>Past Events</h2>
+                    <h2 data-aos="fade-up" data-aos-delay="200">Past Events</h2>
                     <div className="events-list">
                         {pastEvents.map(event => renderEventCard(event, true))}
                     </div>
                 </section>
             )}
 
-            {/* Modal placeholder for event details */}
             {selectedEvent && (
                 <div className="modal-overlay" onClick={() => setSelectedEvent(null)}>
                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>

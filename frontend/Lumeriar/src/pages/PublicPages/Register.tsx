@@ -192,7 +192,7 @@ const Register: React.FC = () => {
     const nextStep = () => setStep(s => s + 1);
     const prevStep = () => setStep(s => s - 1);
 
-    // Validation per step (unchanged)
+    // Validation per step
     const validateStep1 = (): boolean => {
         if (!team.team_name.trim()) { setError('Team name required'); return false; }
         if (!team.school.trim()) { setError('School/Institution required'); return false; }
@@ -309,10 +309,10 @@ const Register: React.FC = () => {
 
     return (
         <div className="events-page">
-            <h1>Register for: {event?.name}</h1>
-            <p>{event?.venue} - {event?.date ? new Date(event.date).toLocaleDateString() : 'Date TBA'}</p>
+            <h1 data-aos="fade-up">Register for: {event?.name}</h1>
+            <p data-aos="fade-up" data-aos-delay="200">{event?.venue} - {event?.date ? new Date(event.date).toLocaleDateString() : 'Date TBA'}</p>
 
-            <div className="registration-steps">
+            <div className="registration-steps" data-aos="fade-up" data-aos-delay="400">
                 <div className="step-indicator">
                     <span className={step >= 1 ? 'active' : ''}>1. Team Details</span>
                     <span className={step >= 2 ? 'active' : ''}>2. Members & Coach</span>
@@ -397,10 +397,9 @@ const Register: React.FC = () => {
                     </div>
                 )}
 
-                {/* Step 2: Team Members and Coach (unchanged) */}
+                {/* Step 2: Team Members and Coach */}
                 {step === 2 && (
                     <div className="step-form">
-                        {/* ... same as before ... */}
                         <h3>Students</h3>
                         {students.map((student, idx) => (
                             <div key={student.id} className="student-card">
@@ -458,7 +457,7 @@ const Register: React.FC = () => {
                     </div>
                 )}
 
-                {/* Step 3: Document Uploads (unchanged) */}
+                {/* Step 3: Document Uploads */}
                 {step === 3 && (
                     <div className="step-form">
                         <h3>Team Documents</h3>
@@ -486,7 +485,7 @@ const Register: React.FC = () => {
                     </div>
                 )}
 
-                {/* Step 4: Review and Submit (unchanged) */}
+                {/* Step 4: Review and Submit */}
                 {step === 4 && (
                     <div className="step-form">
                         <h3>Review your registration</h3>

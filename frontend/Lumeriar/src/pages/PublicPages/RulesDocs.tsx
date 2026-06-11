@@ -37,18 +37,26 @@ const RulesDocs: React.FC = () => {
 
     return (
         <div className="events-page">
-            <h1>Rules & Documents</h1>
-            <p>Download the official documents for judges and tournament participants.</p>
+            <h1 data-aos="fade-up">Rules & Documents</h1>
+            <p data-aos="fade-up" data-aos-delay="200">
+                Download the official documents for judges and tournament participants.
+            </p>
 
             <div className="docs-list" style={{ marginTop: '2rem' }}>
-                {docs.map(doc => (
-                    <div key={doc.document_id} className="doc-card" style={{
-                        background: 'rgba(255,255,255,0.05)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: '12px',
-                        padding: '1.5rem',
-                        marginBottom: '1rem',
-                    }}>
+                {docs.map((doc, index) => (
+                    <div
+                        key={doc.document_id}
+                        className="doc-card"
+                        data-aos="fade-up"
+                        data-aos-delay={300 + index * 100}
+                        style={{
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: '12px',
+                            padding: '1.5rem',
+                            marginBottom: '1rem',
+                        }}
+                    >
                         <h3>{doc.name}</h3>
                         <p>{doc.description || 'No description provided.'}</p>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
@@ -59,7 +67,7 @@ const RulesDocs: React.FC = () => {
                         </div>
                     </div>
                 ))}
-                {docs.length === 0 && <p>No documents available at this time.</p>}
+                {docs.length === 0 && <p data-aos="fade-up">No documents available at this time.</p>}
             </div>
         </div>
     );

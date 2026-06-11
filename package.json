@@ -1,9 +1,13 @@
 {
   "dependencies": {
     "@google-cloud/local-auth": "^3.0.1",
+    "aos": "^2.3.4",
     "googleapis": "^171.4.0",
     "multer": "^2.1.1",
     "nodemailer": "^8.0.7",
     "uuid": "^14.0.0"
+  },
+  "devDependencies": {
+    "@types/aos": "^3.0.8"
   }
 }

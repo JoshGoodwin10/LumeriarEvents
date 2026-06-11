@@ -129,9 +129,9 @@ const Leaderboards: React.FC = () => {
 
     return (
         <div className="events-page">
-            <h1>Leaderboard & Awards</h1>
+            <h1 data-aos="fade-up">Leaderboard & Awards</h1>
 
-            <div className="event-selector" style={{ marginBottom: '2rem' }}>
+            <div className="event-selector" style={{ marginBottom: '2rem' }} data-aos="fade-up" data-aos-delay="100">
                 <label htmlFor="eventSelect">Select Event: </label>
                 <select
                     id="eventSelect"
@@ -153,7 +153,7 @@ const Leaderboards: React.FC = () => {
 
             {leaderboard && (
                 <>
-                    <div>
+                    <div data-aos="fade-up" data-aos-delay="200">
                         <h2>
                             {leaderboard.event.name}
                             <span style={{ fontSize: '0.9rem', marginLeft: '1rem' }}>
@@ -206,7 +206,7 @@ const Leaderboards: React.FC = () => {
                     </div>
 
                     {/* Awards Section - Public view */}
-                    <div style={{ marginTop: '3rem' }}>
+                    <div style={{ marginTop: '3rem' }} data-aos="fade-up" data-aos-delay="300">
                         <h2>Awards</h2>
                         {loadingAwards ? (
                             <div>Loading awards...</div>
@@ -219,8 +219,8 @@ const Leaderboards: React.FC = () => {
                                 <div key={category} style={{ marginBottom: '1.5rem' }}>
                                     <h3>{category === 'Overall' ? 'Overall Awards' : category}</h3>
                                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
-                                        {catAwards.map(award => (
-                                            <div key={award.award_id} className="award-card" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '1rem' }}>
+                                        {catAwards.map((award, idx) => (
+                                            <div key={award.award_id} className="award-card" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '1rem' }} data-aos="fade-up" data-aos-delay={400 + idx * 100}>
                                                 <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#f39c12' }}>{award.award_type}</div>
                                                 <div style={{ marginTop: '0.5rem' }}>
                                                     <span style={{ fontWeight: 'bold' }}>{award.team_name}</span>

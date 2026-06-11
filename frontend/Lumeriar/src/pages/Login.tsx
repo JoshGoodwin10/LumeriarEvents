@@ -29,7 +29,7 @@ export default function Login() {
 
   return (
     <div className="login-container">
-      <div className="login-card">
+      <div className="login-card" data-aos="fade-up">
         <div className="login-header">
           <h1>Welcome Back</h1>
           <p>Sign in to your account</p>

@@ -7,20 +7,20 @@ const Curriculums = () => {
             {/* Hero */}
             <header className="heronoimage" id="hero">
                 <div className="container">
-                    <h1 className="animated fadeInDown delay-07s">CAPS-Aligned Curriculums</h1>
+                    <h1>CAPS-Aligned Curriculums</h1>
                 </div>
             </header>
 
             {/* Overview Section */}
             <section className="main-section alabaster" id="overview">
                 <div className="container">
-                    <h2 className="wow fadeInUp delay-03s">A Comprehensive Robotics Education</h2>
+                    <h2 data-aos="fade-up" data-aos-delay="300">A Comprehensive Robotics Education</h2>
                     <div className="row align-center">
                         <div className="grid-2">
-                            <figure className="wow fadeInLeft delay-04s">
+                            <figure data-aos="fade-left" data-aos-delay="400">
                                 <img src="../images/Grade 8 Cover.png" alt="Curriculum materials" className="img-fluid" style={{ borderRadius: '20px' }} />
                             </figure>
-                            <div className="wow fadeInRight delay-04s">
+                            <div data-aos="fade-right" data-aos-delay="400">
                                 <p className="mb-4">Our curriculums are meticulously designed to align with the South African CAPS
                                     framework, ensuring that robotics and coding education integrates seamlessly with existing
                                     educational standards. From foundational concepts in early grades to advanced programming and
@@ -29,7 +29,6 @@ const Curriculums = () => {
                                     and teacher guides to ensure successful implementation in any classroom setting.</p>
                             </div>
                         </div>
-
                     </div>
                 </div>
             </section>
@@ -37,11 +36,11 @@ const Curriculums = () => {
             {/* Grade Levels Section */}
             <section className="main-section" id="grade-levels">
                 <div className="container">
-                    <h2 className="wow fadeInUp delay-03s">Curriculum by Grade Level</h2>
-                    <h6>Tailored learning experiences for every stage of development</h6>
+                    <h2 data-aos="fade-up" data-aos-delay="300">Curriculum by Grade Level</h2>
+                    <h6 data-aos="fade-up" data-aos-delay="400">Tailored learning experiences for every stage of development</h6>
 
                     <div className="grid-3">
-                        <div className="card">
+                        <div className="card" data-aos="fade-up" data-aos-delay="200">
                             <div className="grade-badge">Grade R-3</div>
                             <h3 className="card-title">Foundation Phase</h3>
                             <p className="card-text">Introduction to Coding and Robotics through unplugged, concrete and
@@ -53,7 +52,7 @@ const Curriculums = () => {
                                 <li>Digital concepts early awareness</li>
                             </ul>
                         </div>
-                        <div className="card">
+                        <div className="card" data-aos="fade-up" data-aos-delay="400">
                             <div className="grade-badge">Grade 4-6</div>
                             <h3 className="card-title">Intermediate Phase</h3>
                             <p className="card-text">A structured progression that develops learners to function in a digital
@@ -65,7 +64,7 @@ const Curriculums = () => {
                                 <li>Digital fluency and communication</li>
                             </ul>
                         </div>
-                        <div className="card">
+                        <div className="card" data-aos="fade-up" data-aos-delay="600">
                             <div className="grade-badge">Grade 7-9</div>
                             <h3 className="card-title">Senior Phase</h3>
                             <p className="card-text">STEAM-linked subject that combines programming + robotics + digital
@@ -84,22 +83,22 @@ const Curriculums = () => {
             {/* Features Section */}
             <section className="main-section alabaster" id="features">
                 <div className="container">
-                    <h2 className="wow fadeInUp delay-03s">What's Included</h2>
+                    <h2 data-aos="fade-up" data-aos-delay="300">What's Included</h2>
 
                     <div className="grid-3">
-                        <div className="card">
+                        <div className="card" data-aos="fade-up" data-aos-delay="200">
                             <div className="feature-icon">📝</div>
                             <h3 className="card-title">Curriculum</h3>
                             <p className="card-text">Complete curriculum packages for each grade phase, including learning
                                 objectives, assessment criteria, and teacher support materials.</p>
                         </div>
-                        <div className="card">
+                        <div className="card" data-aos="fade-up" data-aos-delay="400">
                             <div className="feature-icon">📚</div>
                             <h3 className="card-title">Lesson Plans</h3>
                             <p className="card-text">Step-by-step teaching guides with clear learning objectives, activities, and
                                 timing suggestions for each session.</p>
                         </div>
-                        <div className="card">
+                        <div className="card" data-aos="fade-up" data-aos-delay="600">
                             <div className="feature-icon">🎯</div>
                             <h3 className="card-title">CAPS Alignment</h3>
                             <p className="card-text">Every lesson mapped to specific CAPS curriculum outcomes ensuring compliance
@@ -113,7 +112,7 @@ const Curriculums = () => {
             <section className="main-section" id="cta">
                 <div className="container">
                     <div className="row">
-                        <div className="col-12 text-center wow fadeInUp delay-04s">
+                        <div className="col-12 text-center" data-aos="fade-up" data-aos-delay="400">
                             <h2>Ready to start your robotics journey?</h2>
                             <p className="mb-4">Get in touch to learn more about our curriculum offerings.</p>
                             <Link to="/contact" className="btn">Contact Us</Link>
