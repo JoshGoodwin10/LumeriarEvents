@@ -17,28 +17,28 @@ router.get("/", async (req, res) => {
     const { school_id, category, search } = req.query;
 
     let query = `
-      SELECT Team.*, School.school_name
-      FROM Team
-      LEFT JOIN School ON Team.school_id = School.school_id
+      SELECT team.*, school.school_name
+      FROM team
+      LEFT JOIN school ON team.school_id = school.school_id
       WHERE 1=1
     `;
     const params = [];
 
     if (school_id) {
-      query += " AND Team.school_id = ?";
+      query += " AND team.school_id = ?";
       params.push(school_id);
     }
     if (category) {
-      query += " AND Team.category = ?";
+      query += " AND team.category = ?";
       params.push(category);
     }
     if (search) {
-      query += " AND (Team.team_name LIKE ? OR Team.theme LIKE ? OR Team.project_description LIKE ?)";
+      query += " AND (team.team_name LIKE ? OR team.theme LIKE ? OR team.project_description LIKE ?)";
       const like = `%${search}%`;
       params.push(like, like, like);
     }
 
-    query += " ORDER BY Team.created_at DESC";
+    query += " ORDER BY team.created_at DESC";
 
     const [rows] = await db.execute(query, params);
     res.json(rows);
@@ -52,8 +52,8 @@ router.get("/", async (req, res) => {
 router.get("/filter-options", async (req, res) => {
   try {
     const [[categories], [schools]] = await Promise.all([
-      db.execute("SELECT DISTINCT category FROM Team WHERE category IS NOT NULL ORDER BY category"),
-      db.execute("SELECT DISTINCT school_id FROM Team WHERE school_id IS NOT NULL ORDER BY school_id"),
+      db.execute("SELECT DISTINCT category FROM team WHERE category IS NOT NULL ORDER BY category"),
+      db.execute("SELECT DISTINCT school_id FROM team WHERE school_id IS NOT NULL ORDER BY school_id"),
     ]);
     res.json({
       categories: categories.map(r => r.category),
@@ -68,7 +68,7 @@ router.get("/filter-options", async (req, res) => {
 // ─── GET /api/teams/:id ──────────────────────────────────────
 router.get("/:id", async (req, res) => {
   try {
-    const [rows] = await db.execute("SELECT * FROM Team WHERE team_id = ?", [req.params.id]);
+    const [rows] = await db.execute("SELECT * FROM team WHERE team_id = ?", [req.params.id]);
     if (rows.length === 0) return res.status(404).json({ message: "Team not found." });
     res.json(rows[0]);
   } catch (err) {
@@ -98,7 +98,7 @@ router.post("/", upload.fields([
 
   try {
     const [result] = await db.execute(
-      `INSERT INTO Team (
+      `INSERT INTO team (
         team_name, category, school_id, theme, province, event,
         project_description, how_heard, coach_id,
         material_bill, engineering_plan, project_report, engineering_journal
@@ -131,7 +131,7 @@ router.put("/:id", upload.fields([
   const teamId = req.params.id;
 
   try {
-    const [existing] = await db.execute("SELECT * FROM Team WHERE team_id = ?", [teamId]);
+    const [existing] = await db.execute("SELECT * FROM team WHERE team_id = ?", [teamId]);
     if (existing.length === 0) return res.status(404).json({ message: "Team not found." });
 
     const updates = [];
@@ -165,7 +165,7 @@ router.put("/:id", upload.fields([
     }
 
     values.push(teamId);
-    const query = `UPDATE Team SET ${updates.join(", ")} WHERE team_id = ?`;
+    const query = `UPDATE team SET ${updates.join(", ")} WHERE team_id = ?`;
     await db.execute(query, values);
 
     res.json({ message: "Team updated." });
@@ -178,7 +178,7 @@ router.put("/:id", upload.fields([
 // ─── DELETE /api/teams/:id ───────────────────────────────────
 router.delete("/:id", async (req, res) => {
   try {
-    const [result] = await db.execute("DELETE FROM Team WHERE team_id = ?", [req.params.id]);
+    const [result] = await db.execute("DELETE FROM team WHERE team_id = ?", [req.params.id]);
     if (result.affectedRows === 0) return res.status(404).json({ message: "Team not found." });
     res.json({ message: "Team deleted." });
   } catch (err) {
@@ -194,8 +194,8 @@ router.get("/:id/details", async (req, res) => {
   try {
     const [teamRows] = await db.execute(`
       SELECT t.*, s.school_name
-      FROM Team t
-      LEFT JOIN School s ON t.school_id = s.school_id
+      FROM team t
+      LEFT JOIN school s ON t.school_id = s.school_id
       WHERE t.team_id = ?
     `, [teamId]);
     if (teamRows.length === 0) return res.status(404).json({ message: "Team not found." });
@@ -203,27 +203,27 @@ router.get("/:id/details", async (req, res) => {
 
     let school = null;
     if (team.school_id) {
-      const [schoolRows] = await db.execute("SELECT * FROM School WHERE school_id = ?", [team.school_id]);
+      const [schoolRows] = await db.execute("SELECT * FROM school WHERE school_id = ?", [team.school_id]);
       if (schoolRows.length) school = schoolRows[0];
     }
 
     // Coach: now linked via team.coach_id (singular, not a list)
     let coaches = [];
     if (team.coach_id) {
-      const [coachRows] = await db.execute("SELECT * FROM Coach WHERE coach_id = ?", [team.coach_id]);
+      const [coachRows] = await db.execute("SELECT * FROM coach WHERE coach_id = ?", [team.coach_id]);
       coaches = coachRows; // array with one item (or empty)
     }
 
     const [students] = await db.execute(
       `SELECT student_id, first_name, surname, date_of_birth, grade, role,
               shirt_size, dietary_requirements
-       FROM Student
+       FROM student
        WHERE team_id = ?`,
       [teamId]
     );
 
     const [eventTeams] = await db.execute(
-      "SELECT event_team_id, event_id, total_points, created_at FROM Event_Team WHERE team_id = ?",
+      "SELECT event_team_id, event_id, total_points, created_at FROM event_team WHERE team_id = ?",
       [teamId]
     );
 
@@ -243,7 +243,7 @@ router.get("/:id/download/:field", async (req, res) => {
   }
 
   try {
-    const [rows] = await db.execute(`SELECT ${field} FROM Team WHERE team_id = ?`, [id]);
+    const [rows] = await db.execute(`SELECT ${field} FROM team WHERE team_id = ?`, [id]);
     if (!rows[0] || !rows[0][field]) {
       return res.status(404).json({ message: "File not found." });
     }

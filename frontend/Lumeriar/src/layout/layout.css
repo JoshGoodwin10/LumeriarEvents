@@ -223,16 +223,6 @@
     position: relative;
 }
 
-.footer-col h4::after {
-    content: '';
-    width: 30px;
-    height: 2px;
-    background: var(--color-secondary);
-    position: absolute;
-    bottom: -8px;
-    left: 0;
-}
-
 .footer-col ul {
     list-style: none;
     padding: 0;

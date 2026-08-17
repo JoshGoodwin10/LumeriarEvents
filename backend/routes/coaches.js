@@ -10,24 +10,24 @@ router.get("/", async (req, res) => {
     try {
         const { search, school_id } = req.query;
         let query = `
-            SELECT Coach.*, School.school_name
-            FROM Coach
-            LEFT JOIN School ON Coach.school_id = School.school_id
+            SELECT coach.*, school.school_name
+            FROM coach
+            LEFT JOIN school ON coach.school_id = school.school_id
             WHERE 1=1
         `;
         const params = [];
 
         if (search) {
-            query += " AND (Coach.first_name LIKE ? OR Coach.surname LIKE ? OR Coach.email LIKE ?)";
+            query += " AND (coach.first_name LIKE ? OR coach.surname LIKE ? OR coach.email LIKE ?)";
             const like = `%${search}%`;
             params.push(like, like, like);
         }
         if (school_id) {
-            query += " AND Coach.school_id = ?";
+            query += " AND coach.school_id = ?";
             params.push(school_id);
         }
 
-        query += " ORDER BY Coach.created_at DESC";
+        query += " ORDER BY coach.created_at DESC";
         const [rows] = await db.execute(query, params);
         res.json(rows);
     } catch (err) {
@@ -39,7 +39,7 @@ router.get("/", async (req, res) => {
 // GET /api/coaches/filter-options
 router.get("/filter-options", async (req, res) => {
     try {
-        const [schools] = await db.execute("SELECT school_id, school_name FROM School ORDER BY school_name");
+        const [schools] = await db.execute("SELECT school_id, school_name FROM school ORDER BY school_name");
         res.json({ schools });
     } catch (err) {
         console.error(err);
@@ -50,7 +50,7 @@ router.get("/filter-options", async (req, res) => {
 // GET /api/coaches/:id
 router.get("/:id", async (req, res) => {
     try {
-        const [rows] = await db.execute("SELECT * FROM Coach WHERE coach_id = ?", [req.params.id]);
+        const [rows] = await db.execute("SELECT * FROM coach WHERE coach_id = ?", [req.params.id]);
         if (rows.length === 0) return res.status(404).json({ message: "Coach not found." });
         res.json(rows[0]);
     } catch (err) {
@@ -71,7 +71,7 @@ router.post("/", async (req, res) => {
 
     try {
         const [result] = await db.execute(
-            `INSERT INTO Coach 
+            `INSERT INTO coach 
             (first_name, surname, email, phone_no, date_of_birth, 
              staff_number, dietary_requirements, shirt_size, signed_integrity_declaration, school_id, created_at)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
@@ -103,7 +103,7 @@ router.put("/:id", async (req, res) => {
     } = req.body;
     try {
         const [result] = await db.execute(
-            `UPDATE Coach SET 
+            `UPDATE coach SET 
                 first_name = ?,
                 surname = ?,
                 email = ?,
@@ -140,12 +140,61 @@ router.put("/:id", async (req, res) => {
 // DELETE /api/coaches/:id
 router.delete("/:id", async (req, res) => {
     try {
-        const [result] = await db.execute("DELETE FROM Coach WHERE coach_id = ?", [req.params.id]);
+        const [result] = await db.execute("DELETE FROM coach WHERE coach_id = ?", [req.params.id]);
         if (result.affectedRows === 0) return res.status(404).json({ message: "Coach not found." });
         res.json({ message: "Coach deleted." });
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Failed to delete coach." });
+    }
+});
+
+// GET /api/coaches/:coachId/teams-scores
+router.get('/:coachId/teams-scores', async (req, res) => {
+    const coachId = req.params.coachId;
+    try {
+        // Get the team(s) coached by this coach
+        const [teams] = await db.execute(
+            `SELECT t.team_id, t.team_name, et.event_id, e.name AS event_name
+       FROM team t
+       JOIN event_team et ON t.team_id = et.team_id
+       JOIN event e ON et.event_id = e.event_id
+       WHERE t.coach_id = ?`,
+            [coachId]
+        );
+
+        if (teams.length === 0) {
+            return res.json([]);
+        }
+
+        const result = [];
+        for (const team of teams) {
+            // Get scores for this team-event combination
+            const [scores] = await db.execute(
+                `SELECT s.score_id, s.round, s.technical_score, s.innovation_design_score,
+                s.theme_score, s.real_world_score, s.teamwork_score, s.is_approved,
+                COALESCE(s.appeal_status, 'none') AS appeal_status
+         FROM score s
+         WHERE s.event_team_id = (SELECT event_team_id FROM event_team WHERE team_id = ? AND event_id = ?)
+         ORDER BY s.round`,
+                [team.team_id, team.event_id]
+            );
+
+            const total = scores.reduce((sum, s) => sum + s.technical_score + s.innovation_design_score + s.theme_score + s.real_world_score + s.teamwork_score, 0);
+            result.push({
+                team_id: team.team_id,
+                team_name: team.team_name,
+                event_id: team.event_id,
+                event_name: team.event_name,
+                scores,
+                overall_total: total,
+            });
+        }
+
+        res.json(result);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Failed to fetch team scores.' });
     }
 });
 

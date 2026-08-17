@@ -14,10 +14,10 @@ router.get("/event/:eventId", async (req, res) => {
             SELECT s.*, 
                    t.team_id, t.team_name,
                    j.first_name AS judge_first, j.surname AS judge_surname
-            FROM Score s
-            JOIN Event_Team et ON s.event_team_id = et.event_team_id
-            JOIN Team t ON et.team_id = t.team_id
-            JOIN Judge j ON s.judge_id = j.judge_id
+            FROM score s
+            JOIN event_team et ON s.event_team_id = et.event_team_id
+            JOIN team t ON et.team_id = t.team_id
+            JOIN judge j ON s.judge_id = j.judge_id
             WHERE et.event_id = ?
             ORDER BY t.team_name, s.round
         `, [eventId]);
@@ -39,7 +39,7 @@ router.post("/:eventId/scores", async (req, res) => {
 
     try {
         const [etRows] = await db.execute(
-            "SELECT event_team_id FROM Event_Team WHERE event_id = ? AND team_id = ?",
+            "SELECT event_team_id FROM event_team WHERE event_id = ? AND team_id = ?",
             [eventId, team_id]
         );
         if (etRows.length === 0) {
@@ -48,20 +48,20 @@ router.post("/:eventId/scores", async (req, res) => {
         const event_team_id = etRows[0].event_team_id;
 
         const [existing] = await db.execute(
-            "SELECT * FROM Score WHERE event_team_id = ? AND round = ? AND judge_id = ?",
+            "SELECT * FROM score WHERE event_team_id = ? AND round = ? AND judge_id = ?",
             [event_team_id, round, judge_id]
         );
 
         if (existing.length === 0) {
             const [result] = await db.execute(`
-                INSERT INTO Score 
+                INSERT INTO score 
                 (event_team_id, round, judge_id, technical_score, innovation_design_score, theme_score, real_world_score, teamwork_score)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             `, [event_team_id, round, judge_id, technical_score, innovation_design_score, theme_score, real_world_score, teamwork_score]);
             const newScoreId = result.insertId;
 
             await db.execute(`
-                INSERT INTO Score_History (score_id, judge_id, change_reason, 
+                INSERT INTO score_history (score_id, judge_id, change_reason, 
                     new_technical_score, new_innovation_design_score, new_theme_score, new_real_world_score, new_teamwork_score)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             `, [newScoreId, judge_id, change_reason || "Initial score",
@@ -69,7 +69,7 @@ router.post("/:eventId/scores", async (req, res) => {
         } else {
             const old = existing[0];
             await db.execute(`
-                UPDATE Score SET
+                UPDATE score SET
                     technical_score = ?,
                     innovation_design_score = ?,
                     theme_score = ?,
@@ -87,7 +87,7 @@ router.post("/:eventId/scores", async (req, res) => {
 
             if (changes.length > 0) {
                 await db.execute(`
-                    INSERT INTO Score_History 
+                    INSERT INTO score_history 
                     (score_id, judge_id, change_reason,
                      old_technical_score, new_technical_score,
                      old_innovation_design_score, new_innovation_design_score,
@@ -122,20 +122,20 @@ async function recalcTeamTotalPoints(event_team_id) {
             COALESCE(real_world_score,0) + 
             COALESCE(teamwork_score,0)
         ) AS total
-        FROM Score
+        FROM score
         WHERE event_team_id = ? AND is_approved = TRUE
     `, [event_team_id]);
     const total = rows[0].total || 0;
-    await db.execute("UPDATE Event_Team SET total_points = ? WHERE event_team_id = ?", [total, event_team_id]);
+    await db.execute("UPDATE event_team SET total_points = ? WHERE event_team_id = ?", [total, event_team_id]);
 }
 
 // PUT /api/scores/:scoreId/approve – corrected path (removed extra /scores)
 router.put("/:scoreId/approve", async (req, res) => {
     const { scoreId } = req.params;
     try {
-        const [score] = await db.execute("SELECT event_team_id FROM Score WHERE score_id = ?", [scoreId]);
+        const [score] = await db.execute("SELECT event_team_id FROM score WHERE score_id = ?", [scoreId]);
         if (score.length === 0) return res.status(404).json({ message: "Score not found." });
-        await db.execute("UPDATE Score SET is_approved = TRUE WHERE score_id = ?", [scoreId]);
+        await db.execute("UPDATE score SET is_approved = TRUE WHERE score_id = ?", [scoreId]);
         await recalcTeamTotalPoints(score[0].event_team_id);
         res.json({ message: "Score approved." });
     } catch (err) {
@@ -150,8 +150,8 @@ router.get("/:scoreId/history", async (req, res) => {
     try {
         const [history] = await db.execute(`
             SELECT h.*, j.first_name, j.surname
-            FROM Score_History h
-            JOIN Judge j ON h.judge_id = j.judge_id
+            FROM score_history h
+            JOIN judge j ON h.judge_id = j.judge_id
             WHERE h.score_id = ?
             ORDER BY h.change_date DESC
         `, [scoreId]);
@@ -169,12 +169,12 @@ router.put('/assign-team-judge', authMiddleware, async (req, res) => {
         return res.status(400).json({ message: 'event_team_id and judge_id are required.' });
     }
     try {
-        const [judgeRows] = await db.execute('SELECT judge_id FROM Judge WHERE judge_id = ?', [judge_id]);
+        const [judgeRows] = await db.execute('SELECT judge_id FROM judge WHERE judge_id = ?', [judge_id]);
         if (judgeRows.length === 0) {
             return res.status(404).json({ message: 'Judge not found.' });
         }
         await db.execute(
-            'UPDATE Score SET judge_id = ? WHERE event_team_id = ?',
+            'UPDATE score SET judge_id = ? WHERE event_team_id = ?',
             [judge_id, event_team_id]
         );
         res.json({ message: 'Judge assigned to team for all rounds.' });
@@ -204,14 +204,14 @@ router.post("/", async (req, res) => {
 
     try {
         const [existing] = await db.execute(
-            "SELECT * FROM Score WHERE event_team_id = ? AND round = ? AND judge_id = ?",
+            "SELECT * FROM score WHERE event_team_id = ? AND round = ? AND judge_id = ?",
             [event_team_id, round, judge_id]
         );
 
         if (existing.length === 0) {
             // Insert new score
             const [result] = await db.execute(`
-                INSERT INTO Score 
+                INSERT INTO score 
                 (event_team_id, round, judge_id, technical_score, innovation_design_score, 
                  theme_score, real_world_score, teamwork_score, is_approved)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
@@ -220,7 +220,7 @@ router.post("/", async (req, res) => {
             const newScoreId = result.insertId;
 
             await db.execute(`
-                INSERT INTO Score_History 
+                INSERT INTO score_history 
                 (score_id, judge_id, change_reason, 
                  new_technical_score, new_innovation_design_score, new_theme_score, 
                  new_real_world_score, new_teamwork_score)
@@ -245,7 +245,7 @@ router.post("/", async (req, res) => {
             const newTeam = keepOld(teamwork_score, old.teamwork_score);
 
             await db.execute(`
-                UPDATE Score SET
+                UPDATE score SET
                     technical_score = ?,
                     innovation_design_score = ?,
                     theme_score = ?,
@@ -263,7 +263,7 @@ router.post("/", async (req, res) => {
 
             if (changes.length > 0) {
                 await db.execute(`
-                    INSERT INTO Score_History 
+                    INSERT INTO score_history 
                     (score_id, judge_id, change_reason,
                      old_technical_score, new_technical_score,
                      old_innovation_design_score, new_innovation_design_score,
@@ -285,6 +285,44 @@ router.post("/", async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Failed to save score." });
+    }
+});
+
+// PUT /api/scores/:scoreId/appeal
+router.put('/:scoreId/appeal', authMiddleware, async (req, res) => {
+    const { scoreId } = req.params;
+    try {
+        // Ensure the score belongs to a team coached by this user
+        // We'll check the team's coach_id against the authenticated user's userId (coach_id)
+        const [rows] = await db.execute(
+            `SELECT s.score_id, t.coach_id
+       FROM score s
+       JOIN event_team et ON s.event_team_id = et.event_team_id
+       JOIN team t ON et.team_id = t.team_id
+       WHERE s.score_id = ?`,
+            [scoreId]
+        );
+        if (rows.length === 0) return res.status(404).json({ message: 'Score not found.' });
+        const score = rows[0];
+        if (score.coach_id !== req.user.userId) {
+            return res.status(403).json({ message: 'You can only appeal scores for your own teams.' });
+        }
+
+        // Check if already appealed
+        if (score.appeal_status !== 'none') {
+            return res.status(400).json({ message: 'This score has already been appealed.' });
+        }
+
+        // Update appeal status
+        await db.execute(
+            'UPDATE score SET appeal_status = ? WHERE score_id = ?',
+            ['pending', scoreId]
+        );
+
+        res.json({ message: 'Appeal submitted successfully.' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Failed to submit appeal.' });
     }
 });
 

@@ -10,9 +10,9 @@ router.get('/event/:eventId', async (req, res) => {
     try {
         const [rows] = await db.execute(`
             SELECT a.*, t.team_name, e.name AS event_name
-            FROM Awards a
-            JOIN Team t ON a.team_id = t.team_id
-            JOIN Event e ON a.event_id = e.event_id
+            FROM awards a
+            JOIN team t ON a.team_id = t.team_id
+            JOIN event e ON a.event_id = e.event_id
             WHERE a.event_id = ?
             ORDER BY a.category_name, a.rank_position
         `, [eventId]);
@@ -51,9 +51,9 @@ async function getTeamScores(eventId) {
             SUM(COALESCE(s.teamwork_score,0)) AS total_teamwork,
             SUM(COALESCE(s.innovation_design_score,0)) AS total_innovation,
             SUM(COALESCE(s.theme_score,0)) AS total_theme
-        FROM Team t
-        JOIN Event_Team et ON t.team_id = et.team_id
-        JOIN Score s ON et.event_team_id = s.event_team_id
+        FROM team t
+        JOIN event_team et ON t.team_id = et.team_id
+        JOIN score s ON et.event_team_id = s.event_team_id
         WHERE et.event_id = ? AND s.is_approved = 1
         GROUP BY t.team_id
     `, [eventId]);
@@ -72,7 +72,7 @@ router.post('/generate/:eventId', async (req, res) => {
         // Group teams by category
         const categories = [...new Set(teams.map(t => t.category))];
         // Clear previous awards for this event
-        await db.execute('DELETE FROM Awards WHERE event_id = ?', [eventId]);
+        await db.execute('DELETE FROM awards WHERE event_id = ?', [eventId]);
 
         const awardsToInsert = [];
 
@@ -144,7 +144,7 @@ router.post('/generate/:eventId', async (req, res) => {
         // Insert all
         for (const award of awardsToInsert) {
             await db.execute(
-                `INSERT INTO Awards (event_id, team_id, award_type, category_name, rank_position)
+                `INSERT INTO awards (event_id, team_id, award_type, category_name, rank_position)
                  VALUES (?, ?, ?, ?, ?)`,
                 [award.event_id, award.team_id, award.award_type, award.category_name, award.rank_position]
             );
@@ -165,12 +165,12 @@ router.post('/nominate-most-improved', async (req, res) => {
     try {
         // Remove any existing 'Most Improved' award for this event (only one per event)
         await db.execute(
-            `DELETE FROM Awards WHERE event_id = ? AND award_type = 'Most Improved'`,
+            `DELETE FROM awards WHERE event_id = ? AND award_type = 'Most Improved'`,
             [event_id]
         );
         // Insert new nomination
         await db.execute(
-            `INSERT INTO Awards (event_id, team_id, award_type, category_name, rank_position)
+            `INSERT INTO awards (event_id, team_id, award_type, category_name, rank_position)
              VALUES (?, ?, 'Most Improved', NULL, NULL)`,
             [event_id, team_id]
         );
@@ -187,8 +187,8 @@ router.get('/team/:teamId', async (req, res) => {
     try {
         const [rows] = await db.execute(`
             SELECT a.*, e.name AS event_name
-            FROM Awards a
-            JOIN Event e ON a.event_id = e.event_id
+            FROM awards a
+            JOIN event e ON a.event_id = e.event_id
             WHERE a.team_id = ?
             ORDER BY e.date DESC
         `, [teamId]);

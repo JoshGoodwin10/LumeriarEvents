@@ -70,7 +70,7 @@ h6 {
 
 h1 {
     font-size: 70px;
-    font-weight: bold;
+    font-weight: bold !important;
     letter-spacing: -1px;
     background: linear-gradient(to bottom, var(--color-primary), var(--color-primary-dark));
     -webkit-background-clip: text;
@@ -262,12 +262,14 @@ p {
    Cards & Buttons
    ============================================ */
 .card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
     background: var(--color-white);
     padding: var(--spacing-md);
     border-radius: var(--border-radius);
     box-shadow: var(--shadow-sm);
     transition: var(--transition);
-    height: 100%;
 }
 
 .card:hover {
@@ -326,6 +328,18 @@ p {
     font-style: italic;
 }
 
+/* Buttons inside cards – stick to bottom and full width */
+.card .btn {
+    margin-top: auto;
+    width: 100%;
+    max-width: none;
+    box-sizing: border-box;
+    display: block;
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+}
+
 .btn {
     background-image: linear-gradient(to right, var(--color-primary) 0%, var(--color-primary-dark) 51%, var(--color-primary) 100%);
     margin: 10px auto;
@@ -334,13 +348,12 @@ p {
     text-transform: uppercase;
     transition: 0.5s;
     background-size: 200% auto;
-    color: white;
+    color: rgb(255, 255, 255) !important;
     border-radius: 10px;
     display: inline-block;
     border: none;
     font-family: 'Montserrat', sans-serif;
     text-decoration: none;
-    max-width: 250px;
 }
 
 .btn:hover {

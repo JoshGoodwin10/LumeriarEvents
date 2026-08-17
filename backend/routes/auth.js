@@ -13,9 +13,9 @@ router.post('/login', async (req, res) => {
   }
 
   try {
-    // 1. Check Admin table
+    // 1. Check Admin table (or login table if you use unified)
     const [adminRows] = await db.execute(
-      'SELECT LoginID, email_address, password FROM Login WHERE email_address = ?',
+      'SELECT LoginID, email_address, password FROM login WHERE email_address = ?',
       [email]
     );
     if (adminRows.length > 0) {
@@ -31,9 +31,27 @@ router.post('/login', async (req, res) => {
       }
     }
 
-    // 2. Check Judge table
+    // 2. Check Coach table
+    const [coachRows] = await db.execute(
+      'SELECT coach_id, email, password_hash FROM coach WHERE email = ?',
+      [email]
+    );
+    if (coachRows.length > 0) {
+      const coach = coachRows[0];
+      const match = await bcrypt.compare(password, coach.password_hash);
+      if (match) {
+        const token = jwt.sign(
+          { userId: coach.coach_id, email: coach.email, role: 'coach' },
+          process.env.JWT_SECRET,
+          { expiresIn: '8h' }
+        );
+        return res.json({ token, role: 'coach', userId: coach.coach_id });
+      }
+    }
+
+    // 3. Check Judge table
     const [judgeRows] = await db.execute(
-      'SELECT judge_id, email, password_hash FROM Judge WHERE email = ?',
+      'SELECT judge_id, email, password_hash FROM judge WHERE email = ?',
       [email]
     );
     if (judgeRows.length > 0) {

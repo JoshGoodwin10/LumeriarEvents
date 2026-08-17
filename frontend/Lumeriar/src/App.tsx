@@ -1,4 +1,3 @@
-import './App.css'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import Layout from './layout/Layout'
 import Login from './pages/Login'
@@ -34,6 +33,8 @@ import HardwareKits from './pages/PublicPages/HardwareKits';
 import Partners from './pages/PublicPages/Partners';
 import TeacherDevelopment from './pages/PublicPages/TeacherDevelopment';
 import { useState, useEffect } from 'react';
+import Events from './pages/PublicPages/Events';
+import CoachView from './pages/CoachView/CoachView';
 
 const HomePage = () => {
   // Banner carousel state
@@ -112,7 +113,7 @@ const HomePage = () => {
       <section id="center"></section>
 
       {/* Services – What We Offer */}
-      <section className="main-section" id="services">
+      <section className="main-section alabaster" id="services">
         <div className="container">
           <h2 data-aos="fade-up" data-aos-delay="500">What We Offer</h2>
           <div className="grid-4">
@@ -120,25 +121,25 @@ const HomePage = () => {
               <h3 className="card-title mb-3">School Curriculums</h3>
               <img src="../images/curriculums book.png" alt="Curriculums" className="card-img-top" />
               <p className="card-text mb-4">CAPS aligned curriculums and teaching plans catering for Grade R to Grade 12 learners</p>
-              <a href="/pages/curriculums.html" className="btn">Our Curriculms</a>
+              <a href="/curriculums" className="btn">Our Curriculms</a>
             </div>
             <div className="card" data-aos="fade-up" data-aos-delay="800">
               <h3 className="card-title mb-3">Hardware and Kits</h3>
               <img src="../images/robot arm.png" alt="Robot Arm" className="card-img-top" />
               <p className="card-text mb-4">Durable, classroom-ready robotics kits designed for repeated use and easy classroom management.</p>
-              <a href="/pages/hardwarekits.html" className="btn">See Our Kits</a>
+              <a href="/hardware-kits" className="btn">See Our Kits</a>
             </div>
             <div className="card" data-aos="fade-up" data-aos-delay="1000">
               <h3 className="card-title mb-3">Teacher Development</h3>
               <img src="../images/coding.png" alt="Teacher Development" className="card-img-top" />
               <p className="card-text mb-4">Practical training, and classroom resources that help teachers feel confident leading robotics.</p>
-              <a href="/pages/teacherdevelopment.html" className="btn">Teacher Development</a>
+              <a href="/teacher-development" className="btn">Teacher Development</a>
             </div>
             <div className="card" data-aos="fade-up" data-aos-delay="1000">
               <h3 className="card-title mb-3">Clubs</h3>
               <img src="../images/book-club.png" alt="Clubs" className="card-img-top" />
               <p className="card-text mb-4">After school robotics clubs that foster innovation and collaboration in preparation for worldwide competitions.</p>
-              <a href="/pages/clubs.html" className="btn">Our Clubs</a>
+              <a href="/clubs" className="btn">Our Clubs</a>
             </div>
           </div>
         </div>
@@ -167,7 +168,7 @@ const HomePage = () => {
                   </div>
                 </div>
                 <div className="text-center">
-                  <a href="/pages/about.html" className="btn">About Us</a>
+                  <a href="/about" className="btn">About Us</a>
                 </div>
               </div>
             </div>
@@ -176,7 +177,7 @@ const HomePage = () => {
       </section>
 
       {/* Partners */}
-      <section className="main-section" id="partners">
+      <section className="main-section alabaster" id="partners">
         <div className="container">
           <h2>Our Partners</h2>
           <h6>Trusted partnerships that drive success</h6>
@@ -206,7 +207,7 @@ const HomePage = () => {
               <h3 className="card-title">Moses Kotane Institute</h3>
             </div>
           </div>
-          <a href="/pages/partners.html" className="btn">View Our Partners</a>
+          <a href="/partners" className="btn">View Our Partners</a>
         </div>
       </section>
 
@@ -217,21 +218,18 @@ const HomePage = () => {
           <h6>We'd love to hear from you. Reach out to us today!</h6>
           <div className="contact-info-footer" data-aos="fade-up" data-aos-delay="600">
             <div className="contact-item">
-              <div className="contact-icon"><span>✉</span></div>
               <div className="contact-details">
                 <h3>Email</h3>
                 <a href="mailto:info@lumeriar.com">info@lumeriar.com</a>
               </div>
             </div>
             <div className="contact-item">
-              <div className="contact-icon"><span>☎</span></div>
               <div className="contact-details">
                 <h3>Phone</h3>
                 <a href="tel:+27796035948">079 603 5948</a>
               </div>
             </div>
             <div className="contact-item">
-              <div className="contact-icon"><span>📍</span></div>
               <div className="contact-details">
                 <h3>Address</h3>
                 <p>3 Adelaide Tambo Dr, Durban North, 4051</p>
@@ -262,6 +260,7 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/events-list" element={<EventsList />} />
+          <Route path="/events" element={<Events />} />
           <Route path="/leaderboards" element={<Leaderboards />} />
           <Route path="/leaderboard/:eventId" element={<Leaderboards />} />
           <Route path="/register" element={<Register />} />
@@ -296,6 +295,7 @@ function App() {
             <Route path="/judge/view" element={<JudgeView />} />
             <Route path="/scoring/:eventId" element={<ScoringJudgeView />} />
             <Route path="/head-judge/:id" element={<HeadJudgeView />} />
+            <Route path="/coach/view" element={<CoachView />} />
           </Route>
           {/* Optional: catch‑all for non‑private routes (e.g., 404 page) */}
           {/* If you want a 404 for public visitors, add it here (without redirecting to root) */}

@@ -13,9 +13,9 @@ const upload = multer({ storage });
 // Helper: find or create school
 const findOrCreateSchool = async (schoolName) => {
     if (!schoolName) return null;
-    const [rows] = await db.execute('SELECT school_id FROM School WHERE school_name = ?', [schoolName]);
+    const [rows] = await db.execute('SELECT school_id FROM school WHERE school_name = ?', [schoolName]);
     if (rows.length > 0) return rows[0].school_id;
-    const [result] = await db.execute('INSERT INTO School (school_name) VALUES (?)', [schoolName]);
+    const [result] = await db.execute('INSERT INTO school (school_name) VALUES (?)', [schoolName]);
     return result.insertId;
 };
 
@@ -175,8 +175,8 @@ router.get('/', async (req, res) => {
                    (r.project_report IS NOT NULL) AS has_project_report,
                    (r.engineering_journal IS NOT NULL) AS has_engineering_journal
             FROM team_request r
-            LEFT JOIN School s ON r.school_id = s.school_id
-            LEFT JOIN Event e ON r.event = e.event_id
+            LEFT JOIN school s ON r.school_id = s.school_id
+            LEFT JOIN event e ON r.event = e.event_id
             WHERE 1=1
         `;
         const params = [];
@@ -218,8 +218,8 @@ router.get('/:id', async (req, res) => {
                 (r.project_report IS NOT NULL) AS has_project_report,
                 (r.engineering_journal IS NOT NULL) AS has_engineering_journal
             FROM team_request r
-            LEFT JOIN School s ON r.school_id = s.school_id
-            LEFT JOIN Event e ON r.event = e.event_id
+            LEFT JOIN school s ON r.school_id = s.school_id
+            LEFT JOIN event e ON r.event = e.event_id
             WHERE r.request_id = ?
         `, [requestId]);
 
@@ -289,7 +289,7 @@ router.put('/:id/approve', async (req, res) => {
         // 1b. Get event details for email
         const [eventRows] = await connection.execute(
             `SELECT name, date, venue, start_time, end_time, category 
-             FROM Event WHERE event_id = ?`,
+             FROM event WHERE event_id = ?`,
             [teamReq.event]
         );
         const event = eventRows[0];
@@ -383,7 +383,7 @@ router.put('/:id/approve', async (req, res) => {
 
         // 7. Get total number of rounds for this event
         const [roundsRow] = await connection.execute(
-            `SELECT rounds FROM Event WHERE event_id = ?`,
+            `SELECT rounds FROM event WHERE event_id = ?`,
             [teamReq.event]
         );
         const totalRounds = roundsRow[0]?.rounds || 1;
@@ -470,7 +470,7 @@ function escapeHtml(str) {
 // Helper to get school name (fallback)
 async function getSchoolName(schoolId) {
     if (!schoolId) return 'Unknown School';
-    const [rows] = await db.execute('SELECT school_name FROM School WHERE school_id = ?', [schoolId]);
+    const [rows] = await db.execute('SELECT school_name FROM school WHERE school_id = ?', [schoolId]);
     return rows[0]?.school_name || 'Unknown School';
 }
 

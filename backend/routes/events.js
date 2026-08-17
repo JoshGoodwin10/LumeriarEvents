@@ -10,8 +10,8 @@ router.get("/", async (req, res) => {
         const { search, category } = req.query;
         let query = `
             SELECT e.*, COUNT(et.team_id) AS team_count
-            FROM Event e
-            LEFT JOIN Event_Team et ON e.event_id = et.event_id
+            FROM event e
+            LEFT JOIN event_team et ON e.event_id = et.event_id
             WHERE 1=1
         `;
         const params = [];
@@ -37,7 +37,7 @@ router.get("/", async (req, res) => {
 router.get("/filter-options", async (req, res) => {
     try {
         const [categories] = await db.execute(
-            "SELECT DISTINCT category FROM Event WHERE category IS NOT NULL ORDER BY category"
+            "SELECT DISTINCT category FROM event WHERE category IS NOT NULL ORDER BY category"
         );
         res.json({ categories: categories.map(row => row.category) });
     } catch (err) {
@@ -48,7 +48,7 @@ router.get("/filter-options", async (req, res) => {
 
 router.get("/:id", async (req, res) => {
     try {
-        const [rows] = await db.execute("SELECT * FROM Event WHERE event_id = ?", [req.params.id]);
+        const [rows] = await db.execute("SELECT * FROM event WHERE event_id = ?", [req.params.id]);
         if (rows.length === 0) return res.status(404).json({ message: "Event not found." });
         res.json(rows[0]);
     } catch (err) {
@@ -60,7 +60,7 @@ router.get("/:id", async (req, res) => {
 router.get("/:id/details", async (req, res) => {
     const eventId = req.params.id;
     try {
-        const [eventRows] = await db.execute("SELECT * FROM Event WHERE event_id = ?", [eventId]);
+        const [eventRows] = await db.execute("SELECT * FROM event WHERE event_id = ?", [eventId]);
         if (eventRows.length === 0) return res.status(404).json({ message: "Event not found." });
         const event = eventRows[0];
 
@@ -72,8 +72,8 @@ router.get("/:id/details", async (req, res) => {
                 t.category,
                 et.total_points,
                 et.created_at AS joined_at
-            FROM Event_Team et
-            JOIN Team t ON et.team_id = t.team_id
+            FROM event_team et
+            JOIN team t ON et.team_id = t.team_id
             WHERE et.event_id = ?
             ORDER BY t.team_name
         `, [eventId]);
@@ -90,7 +90,7 @@ router.get("/:id/details", async (req, res) => {
                     teamwork_score,
                     judge_id,
                     is_approved
-                FROM Score
+                FROM score
                 WHERE event_team_id = ?
                 ORDER BY round
             `, [team.event_team_id]);
@@ -121,8 +121,8 @@ router.get("/:id/details", async (req, res) => {
 
             const [judges] = await db.execute(`
                 SELECT DISTINCT j.judge_id, j.first_name, j.surname, j.email, j.role
-                FROM Score s
-                JOIN Judge j ON s.judge_id = j.judge_id
+                FROM score s
+                JOIN judge j ON s.judge_id = j.judge_id
                 WHERE s.event_team_id = ? AND s.is_approved = 1
             `, [team.event_team_id]);
 
@@ -149,7 +149,7 @@ router.get("/:eventId/leaderboard", async (req, res) => {
     const eventId = req.params.eventId;
     try {
         const [eventRows] = await db.execute(
-            "SELECT event_id, name, date, venue FROM Event WHERE event_id = ?",
+            "SELECT event_id, name, date, venue FROM event WHERE event_id = ?",
             [eventId]
         );
         if (eventRows.length === 0) return res.status(404).json({ message: "Event not found." });
@@ -157,8 +157,8 @@ router.get("/:eventId/leaderboard", async (req, res) => {
 
         const [teamRows] = await db.execute(`
             SELECT et.event_team_id, t.team_id, t.team_name
-            FROM Event_Team et
-            JOIN Team t ON et.team_id = t.team_id
+            FROM event_team et
+            JOIN team t ON et.team_id = t.team_id
             WHERE et.event_id = ?
             ORDER BY t.team_name
         `, [eventId]);
@@ -172,7 +172,7 @@ router.get("/:eventId/leaderboard", async (req, res) => {
                 event_team_id, round,
                 technical_score, innovation_design_score, theme_score,
                 real_world_score, teamwork_score, is_approved
-            FROM Score
+            FROM score
             WHERE event_team_id IN (${placeholders}) AND is_approved = 1
             ORDER BY event_team_id, round
         `, eventTeamIds);
@@ -212,7 +212,7 @@ router.post("/", async (req, res) => {
     if (!name || !date) return res.status(400).json({ message: "Event name and date are required." });
     try {
         const [result] = await db.execute(
-            `INSERT INTO Event (name, date, venue, rounds, start_time, end_time, registration_open, category, head_judge)
+            `INSERT INTO event (name, date, venue, rounds, start_time, end_time, registration_open, category, head_judge)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [name, date, venue || null, rounds || 1, start_time || null, end_time || null,
                 registration_open !== undefined ? registration_open : 1, category || null, head_judge || null]
@@ -230,7 +230,7 @@ router.put("/:id", async (req, res) => {
     if (!name || !date) return res.status(400).json({ message: "Event name and date are required." });
     try {
         const [result] = await db.execute(
-            `UPDATE Event SET name=?, date=?, venue=?, rounds=?, start_time=?, end_time=?, registration_open=?, category=?, head_judge=?
+            `UPDATE event SET name=?, date=?, venue=?, rounds=?, start_time=?, end_time=?, registration_open=?, category=?, head_judge=?
              WHERE event_id=?`,
             [name, date, venue || null, rounds || 1, start_time || null, end_time || null,
                 registration_open !== undefined ? registration_open : 1, category || null, head_judge || null, req.params.id]
@@ -246,7 +246,7 @@ router.put("/:id", async (req, res) => {
 // DELETE /api/events/:id (unchanged)
 router.delete("/:id", async (req, res) => {
     try {
-        const [result] = await db.execute("DELETE FROM Event WHERE event_id=?", [req.params.id]);
+        const [result] = await db.execute("DELETE FROM event WHERE event_id=?", [req.params.id]);
         if (result.affectedRows === 0) return res.status(404).json({ message: "Event not found." });
         res.json({ message: "Event deleted." });
     } catch (err) {

@@ -9,7 +9,7 @@ const router = express.Router();
 // Public: GET /api/schools/public – returns list of schools (id and name)
 router.get('/public', async (req, res) => {
     try {
-        const [rows] = await db.execute('SELECT school_id, school_name FROM School ORDER BY school_name');
+        const [rows] = await db.execute('SELECT school_id, school_name FROM school ORDER BY school_name');
         res.json(rows);
     } catch (err) {
         console.error(err);
@@ -24,7 +24,7 @@ router.get("/", async (req, res) => {
     try {
         const { search, province } = req.query;
         // Base query: all schools (with optional filters)
-        let baseQuery = "SELECT school_id, school_name, province, created_at FROM School WHERE 1=1";
+        let baseQuery = "SELECT school_id, school_name, province, created_at FROM school WHERE 1=1";
         const params = [];
         if (search) {
             baseQuery += " AND (school_name LIKE ? OR province LIKE ?)";
@@ -45,7 +45,7 @@ router.get("/", async (req, res) => {
         const schoolsWithStats = await Promise.all(schoolRows.map(async (school) => {
             // Get all teams belonging to this school
             const [teams] = await db.execute(
-                "SELECT team_id FROM Team WHERE school_id = ?",
+                "SELECT team_id FROM team WHERE school_id = ?",
                 [school.school_id]
             );
             const teamIds = teams.map(t => t.team_id);
@@ -60,7 +60,7 @@ router.get("/", async (req, res) => {
             const placeholders = teamIds.map(() => '?').join(',');
             // Get all event_team total_points for these teams
             const [eventTeams] = await db.execute(
-                `SELECT total_points FROM Event_Team WHERE team_id IN (${placeholders})`,
+                `SELECT total_points FROM event_team WHERE team_id IN (${placeholders})`,
                 teamIds
             );
             const points = eventTeams.map(et => et.total_points).filter(p => p !== null);
@@ -92,7 +92,7 @@ router.get("/", async (req, res) => {
 router.get("/filter-options", async (req, res) => {
     try {
         const [provinces] = await db.execute(
-            "SELECT DISTINCT province FROM School WHERE province IS NOT NULL AND province != '' ORDER BY province"
+            "SELECT DISTINCT province FROM school WHERE province IS NOT NULL AND province != '' ORDER BY province"
         );
         res.json({ provinces: provinces.map(row => row.province) });
     } catch (err) {
@@ -111,7 +111,7 @@ router.post("/", async (req, res) => {
     no_teams = no_teams !== undefined && no_teams !== "" ? Number(no_teams) : 0;
     try {
         const [result] = await db.execute(
-            `INSERT INTO School (school_name, best_score, average_score, province, no_teams)
+            `INSERT INTO school (school_name, best_score, average_score, province, no_teams)
              VALUES (?, ?, ?, ?, ?)`,
             [school_name, best_score, average_score, province, no_teams]
         );
@@ -132,7 +132,7 @@ router.put("/:id", async (req, res) => {
     no_teams = no_teams !== undefined && no_teams !== "" ? Number(no_teams) : 0;
     try {
         const [result] = await db.execute(
-            `UPDATE School 
+            `UPDATE school 
              SET school_name=?, best_score=?, average_score=?, province=?, no_teams=?
              WHERE school_id=?`,
             [school_name, best_score, average_score, province, no_teams, req.params.id]
@@ -148,7 +148,7 @@ router.put("/:id", async (req, res) => {
 // DELETE /api/schools/:id - unchanged
 router.delete("/:id", async (req, res) => {
     try {
-        const [result] = await db.execute("DELETE FROM School WHERE school_id=?", [req.params.id]);
+        const [result] = await db.execute("DELETE FROM school WHERE school_id=?", [req.params.id]);
         if (result.affectedRows === 0) return res.status(404).json({ message: "School not found." });
         res.json({ message: "School deleted." });
     } catch (err) {

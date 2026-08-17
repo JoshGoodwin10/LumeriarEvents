@@ -446,6 +446,24 @@
     background: rgba(239, 68, 68, 0.2);
 }
 
+.btn-appeal {
+    padding: 4px 12px;
+    background: #f59e0b;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.btn-appeal:hover {
+    background: #d97706;
+}
+
+.btn-appeal:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
 /* ── Filters (from child dashboards) ── */
 .td-filters {
     display: flex;

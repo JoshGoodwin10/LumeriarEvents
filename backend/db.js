@@ -1,14 +1,14 @@
 const mysql = require("mysql2/promise");
 
 const pool = mysql.createPool({
-  host:     process.env.DB_HOST     || "localhost",
-  port:     parseInt(process.env.DB_PORT || "3306"),
-  user:     process.env.DB_USER     || "root",
-  password: process.env.DB_PASSWORD || "",
-  database: process.env.DB_NAME     || "your_database",
+  host: process.env.DB_HOST || "mysql-223c0825-lumeriar-bushpig2003-44b1-lumeriar.j.aivencloud.com",
+  port: parseInt(process.env.DB_PORT || "16553"),
+  user: process.env.DB_USER || "avnadmin",
+  password: process.env.DB_PASSWORD || "AVNS_GH7_aBBEA_STciEbE3M",
+  database: process.env.DB_NAME || "lumeriartest",
   waitForConnections: true,
-  connectionLimit:    10,
-  queueLimit:         0,
+  connectionLimit: 10,
+  queueLimit: 0,
 });
 
 // Test connection on startup

@@ -19,6 +19,8 @@ export default function Login() {
         navigate('/dashboard');
       } else if (role === 'judge') {
         navigate('/judge/view');
+      } else if (role === 'coach') {
+        navigate('/coach/view');
       } else {
         navigate('/');
       }

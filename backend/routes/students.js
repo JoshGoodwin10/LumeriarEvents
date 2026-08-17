@@ -10,32 +10,32 @@ router.get("/", async (req, res) => {
     try {
         const { search, team_id, grade, role } = req.query;
         let query = `
-      SELECT Student.*, Team.team_name
-      FROM Student
-      LEFT JOIN Team ON Student.team_id = Team.team_id
+      SELECT student.*, team.team_name
+      FROM student
+      LEFT JOIN team ON student.team_id = team.team_id
       WHERE 1=1
     `;
         const params = [];
 
         if (search) {
-            query += " AND (Student.first_name LIKE ? OR Student.surname LIKE ? OR Student.role LIKE ?)";
+            query += " AND (student.first_name LIKE ? OR student.surname LIKE ? OR student.role LIKE ?)";
             const like = `%${search}%`;
             params.push(like, like, like);
         }
         if (team_id) {
-            query += " AND Student.team_id = ?";
+            query += " AND student.team_id = ?";
             params.push(team_id);
         }
         if (grade) {
-            query += " AND Student.grade = ?";
+            query += " AND student.grade = ?";
             params.push(grade);
         }
         if (role) {
-            query += " AND Student.role = ?";
+            query += " AND student.role = ?";
             params.push(role);
         }
 
-        query += " ORDER BY Student.created_at DESC";
+        query += " ORDER BY student.created_at DESC";
         const [rows] = await db.execute(query, params);
         res.json(rows);
     } catch (err) {
@@ -47,9 +47,9 @@ router.get("/", async (req, res) => {
 // GET /api/students/filter-options
 router.get("/filter-options", async (req, res) => {
     try {
-        const [teams] = await db.execute("SELECT team_id, team_name FROM Team ORDER BY team_name");
-        const [grades] = await db.execute("SELECT DISTINCT grade FROM Student WHERE grade IS NOT NULL ORDER BY grade");
-        const [roles] = await db.execute("SELECT DISTINCT role FROM Student WHERE role IS NOT NULL ORDER BY role");
+        const [teams] = await db.execute("SELECT team_id, team_name FROM team ORDER BY team_name");
+        const [grades] = await db.execute("SELECT DISTINCT grade FROM student WHERE grade IS NOT NULL ORDER BY grade");
+        const [roles] = await db.execute("SELECT DISTINCT role FROM student WHERE role IS NOT NULL ORDER BY role");
         res.json({
             teams: teams,
             grades: grades.map(r => r.grade),
@@ -64,7 +64,7 @@ router.get("/filter-options", async (req, res) => {
 // GET /api/students/:id
 router.get("/:id", async (req, res) => {
     try {
-        const [rows] = await db.execute("SELECT * FROM Student WHERE student_id = ?", [req.params.id]);
+        const [rows] = await db.execute("SELECT * FROM student WHERE student_id = ?", [req.params.id]);
         if (rows.length === 0) return res.status(404).json({ message: "Student not found." });
         res.json(rows[0]);
     } catch (err) {
@@ -79,7 +79,7 @@ router.post("/", async (req, res) => {
 
     try {
         const [result] = await db.execute(
-            `INSERT INTO Student (first_name, surname, date_of_birth, team_id, grade, role, shirt_size, dietary_requirements)
+            `INSERT INTO student (first_name, surname, date_of_birth, team_id, grade, role, shirt_size, dietary_requirements)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
             [first_name, surname, date_of_birth || null, team_id || null, grade || null, role || null, shirt_size || null, dietary_requirements || null]
         );
@@ -95,7 +95,7 @@ router.put("/:id", async (req, res) => {
     const { first_name, surname, date_of_birth, team_id, grade, role, shirt_size, dietary_requirements } = req.body;
     try {
         const [result] = await db.execute(
-            `UPDATE Student SET first_name=?, surname=?, date_of_birth=?, team_id=?, grade=?, role=?, shirt_size=?, dietary_requirements=?
+            `UPDATE student SET first_name=?, surname=?, date_of_birth=?, team_id=?, grade=?, role=?, shirt_size=?, dietary_requirements=?
        WHERE student_id=?`,
             [first_name, surname, date_of_birth || null, team_id || null, grade || null, role || null, shirt_size || null, dietary_requirements || null, req.params.id]
         );
@@ -110,7 +110,7 @@ router.put("/:id", async (req, res) => {
 // DELETE /api/students/:id
 router.delete("/:id", async (req, res) => {
     try {
-        const [result] = await db.execute("DELETE FROM Student WHERE student_id=?", [req.params.id]);
+        const [result] = await db.execute("DELETE FROM student WHERE student_id=?", [req.params.id]);
         if (result.affectedRows === 0) return res.status(404).json({ message: "Student not found." });
         res.json({ message: "Student deleted." });
     } catch (err) {
