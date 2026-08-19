@@ -15,6 +15,7 @@ const requestsRoutes = require("./routes/requests");
 const registerRoutes = require("./routes/register");
 const awardsRoutes = require('./routes/awards');
 const documentsRoutes = require('./routes/documents');
+const appealsRoutes = require('./routes/appeals');
 // etc.
 
 const app = express();
@@ -44,6 +45,7 @@ app.use("/api/requests", requestsRoutes);
 app.use("/api/register", registerRoutes);
 app.use('/api/awards', awardsRoutes);
 app.use('/api/documents', documentsRoutes);
+app.use('/api/appeals', appealsRoutes);
 // etc.
 
 // Health check

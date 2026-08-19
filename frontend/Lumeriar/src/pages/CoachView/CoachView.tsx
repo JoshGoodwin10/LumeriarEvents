@@ -1,10 +1,11 @@
 // src/pages/CoachView/CoachView.tsx
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 import '../../layout/dashboard.css';
 
-interface Score {
+interface ScoreWithAppeal {
     score_id: number;
     round: number;
     technical_score: number;
@@ -12,9 +13,13 @@ interface Score {
     theme_score: number;
     real_world_score: number;
     teamwork_score: number;
-    total: number;
     is_approved: number;
-    appeal_status: string; // 'none', 'pending', 'approved', 'rejected'
+    appeal_status: 'none' | 'pending' | 'approved' | 'rejected';
+    appeal_id?: number;
+    appeal_status_detail?: 'pending' | 'approved' | 'rejected';
+    grounds?: string;
+    evidence_filename?: string;
+    head_judge_comment?: string;
 }
 
 interface TeamScores {
@@ -22,8 +27,102 @@ interface TeamScores {
     team_name: string;
     event_id: number;
     event_name: string;
-    scores: Score[];
+    scores: ScoreWithAppeal[];
     overall_total: number;
+}
+
+// ─── Appeal Modal ─────────────────────────────────────────────
+function AppealModal({
+    scoreId,
+    teamName,
+    round,
+    onClose,
+    onAppealSubmitted,
+}: {
+    scoreId: number;
+    teamName: string;
+    round: number;
+    onClose: () => void;
+    onAppealSubmitted: () => void;
+}) {
+    const { token } = useAuth();
+    const [grounds, setGrounds] = useState('');
+    const [file, setFile] = useState<File | null>(null);
+    const [submitting, setSubmitting] = useState(false);
+    const [error, setError] = useState('');
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!grounds.trim()) {
+            setError('Please provide grounds for the appeal.');
+            return;
+        }
+        setSubmitting(true);
+        setError('');
+        const formData = new FormData();
+        formData.append('score_id', String(scoreId));
+        formData.append('grounds', grounds);
+        if (file) formData.append('evidence', file);
+
+        try {
+            const res = await fetch('/api/appeals', {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}` },
+                body: formData,
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.message || 'Appeal submission failed');
+            }
+            alert('Appeal submitted successfully!');
+            onAppealSubmitted();
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    return createPortal(
+        <div className="tdm-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
+            <div className="tdm-box">
+                <div className="tdm-head">
+                    <h2 className="tdm-title">Appeal Score</h2>
+                    <button className="tdm-close" onClick={onClose}>×</button>
+                </div>
+                <form onSubmit={handleSubmit} className="tdm-form">
+                    <p><strong>Team:</strong> {teamName} | <strong>Round:</strong> {round}</p>
+                    <div className="tdm-field">
+                        <label className="tdm-label">Grounds for Appeal *</label>
+                        <textarea
+                            className="tdm-input"
+                            rows={4}
+                            value={grounds}
+                            onChange={e => setGrounds(e.target.value)}
+                            placeholder="Explain why you believe the score should be reviewed..."
+                        />
+                    </div>
+                    <div className="tdm-field">
+                        <label className="tdm-label">Supporting Evidence (optional)</label>
+                        <input
+                            type="file"
+                            className="tdm-input"
+                            accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.txt"
+                            onChange={e => setFile(e.target.files?.[0] || null)}
+                        />
+                    </div>
+                    {error && <p className="tdm-error">{error}</p>}
+                    <div className="tdm-actions">
+                        <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
+                        <button type="submit" className="btn-primary" disabled={submitting}>
+                            {submitting ? 'Submitting...' : 'Submit Appeal'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>,
+        document.body
+    );
 }
 
 export default function CoachView() {
@@ -32,13 +131,13 @@ export default function CoachView() {
     const [teams, setTeams] = useState<TeamScores[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const [appealing, setAppealing] = useState<number | null>(null);
+    const [appealTarget, setAppealTarget] = useState<{ scoreId: number; teamName: string; round: number } | null>(null);
 
     useEffect(() => {
         if (!userId) return;
         const fetchTeams = async () => {
             try {
-                const res = await fetch(`/api/coaches/${userId}/teams-scores`, {
+                const res = await fetch(`/api/appeals/coach/teams`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 if (!res.ok) throw new Error('Failed to load team scores');
@@ -53,38 +152,20 @@ export default function CoachView() {
         fetchTeams();
     }, [userId, token]);
 
-    const handleAppeal = async (scoreId: number) => {
-        setAppealing(scoreId);
-        try {
-            const res = await fetch(`/api/scores/${scoreId}/appeal`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-            if (!res.ok) {
-                const err = await res.json();
-                throw new Error(err.message || 'Appeal failed');
-            }
-            // Refresh data after appeal
-            setTeams(prev => prev.map(team => ({
-                ...team,
-                scores: team.scores.map(s =>
-                    s.score_id === scoreId ? { ...s, appeal_status: 'pending' } : s
-                ),
-            })));
-            alert('Appeal submitted successfully!');
-        } catch (err: any) {
-            alert(err.message);
-        } finally {
-            setAppealing(null);
-        }
-    };
-
     const handleLogout = () => {
         logout();
         navigate('/login');
+    };
+
+    const reload = () => {
+        setLoading(true);
+        fetch(`/api/appeals/coach/teams`, {
+            headers: { Authorization: `Bearer ${token}` },
+        })
+            .then(res => res.json())
+            .then(setTeams)
+            .catch(console.error)
+            .finally(() => setLoading(false));
     };
 
     if (loading) return <div className="td-loading"><span className="spinner-lg" /></div>;
@@ -113,37 +194,44 @@ export default function CoachView() {
                                     <th>Real World</th>
                                     <th>Teamwork</th>
                                     <th>Total</th>
-                                    <th>Status</th>
-                                    <th>Appeal</th>
+                                    <th>Judge Approval</th>
+                                    <th>Appeal Status</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {team.scores.map(score => {
-                                    const total = score.technical_score + score.innovation_design_score + score.theme_score + score.real_world_score + score.teamwork_score;
+                                    const total = (score.technical_score || 0) + (score.innovation_design_score || 0) + (score.theme_score || 0) + (score.real_world_score || 0) + (score.teamwork_score || 0);
                                     const isApproved = score.is_approved === 1;
+                                    // Show "Appeal" button only if the score is NOT approved and no appeal yet.
+                                    const canAppeal = !isApproved && (!score.appeal_status || score.appeal_status === 'none');
+
                                     return (
                                         <tr key={score.score_id}>
                                             <td>{score.round}</td>
-                                            <td>{score.technical_score}</td>
-                                            <td>{score.innovation_design_score}</td>
-                                            <td>{score.theme_score}</td>
-                                            <td>{score.real_world_score}</td>
-                                            <td>{score.teamwork_score}</td>
+                                            <td>{score.technical_score ?? '—'}</td>
+                                            <td>{score.innovation_design_score ?? '—'}</td>
+                                            <td>{score.theme_score ?? '—'}</td>
+                                            <td>{score.real_world_score ?? '—'}</td>
+                                            <td>{score.teamwork_score ?? '—'}</td>
                                             <td><strong>{total}</strong></td>
                                             <td>{isApproved ? '✅ Approved' : '⏳ Pending'}</td>
                                             <td>
-                                                {isApproved && score.appeal_status === 'none' && (
+                                                {canAppeal && (
                                                     <button
                                                         className="btn-appeal"
-                                                        onClick={() => handleAppeal(score.score_id)}
-                                                        disabled={appealing === score.score_id}
+                                                        onClick={() => setAppealTarget({
+                                                            scoreId: score.score_id,
+                                                            teamName: team.team_name,
+                                                            round: score.round,
+                                                        })}
                                                     >
-                                                        {appealing === score.score_id ? 'Appealing...' : 'Appeal'}
+                                                        Appeal
                                                     </button>
                                                 )}
                                                 {score.appeal_status === 'pending' && <span>⏳ Under review</span>}
                                                 {score.appeal_status === 'approved' && <span>✅ Appeal approved</span>}
                                                 {score.appeal_status === 'rejected' && <span>❌ Appeal rejected</span>}
+                                                {!canAppeal && !score.appeal_status && <span>—</span>}
                                             </td>
                                         </tr>
                                     );
@@ -152,6 +240,16 @@ export default function CoachView() {
                         </table>
                     </div>
                 ))
+            )}
+
+            {appealTarget && (
+                <AppealModal
+                    scoreId={appealTarget.scoreId}
+                    teamName={appealTarget.teamName}
+                    round={appealTarget.round}
+                    onClose={() => setAppealTarget(null)}
+                    onAppealSubmitted={() => { setAppealTarget(null); reload(); }}
+                />
             )}
         </div>
     );
