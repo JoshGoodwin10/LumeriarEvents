@@ -163,6 +163,9 @@ export default function HeadJudgeView() {
                         Nominate Most Improved
                     </button>
                     <Link to="/judge/view" className="btn-secondary">← Back to Dashboard</Link>
+                    <Link to={`/head-judge/${id}/appeals`} className="btn-primary">
+                        Manage Appeals
+                    </Link>
                 </div>
             </div>
 

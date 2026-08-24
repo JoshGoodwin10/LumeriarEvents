@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import Layout from './layout/Layout'
 import Login from './pages/Login'
 import 'bootstrap/dist/css/bootstrap.min.css';
+import './layout/public.css';
 import { AuthProvider } from './context/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
 import Overview from './pages/Dashboards/Overview';
@@ -35,6 +36,7 @@ import TeacherDevelopment from './pages/PublicPages/TeacherDevelopment';
 import { useState, useEffect } from 'react';
 import Events from './pages/PublicPages/Events';
 import CoachView from './pages/CoachView/CoachView';
+import AppealsList from './pages/JudgeView/AppealsList';
 
 const HomePage = () => {
   // Banner carousel state
@@ -296,6 +298,7 @@ function App() {
             <Route path="/scoring/:eventId" element={<ScoringJudgeView />} />
             <Route path="/head-judge/:id" element={<HeadJudgeView />} />
             <Route path="/coach/view" element={<CoachView />} />
+            <Route path="/head-judge/:id/appeals" element={<AppealsList />} />
           </Route>
           {/* Optional: catch‑all for non‑private routes (e.g., 404 page) */}
           {/* If you want a 404 for public visitors, add it here (without redirecting to root) */}

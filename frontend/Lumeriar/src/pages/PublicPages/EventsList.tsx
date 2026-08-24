@@ -74,9 +74,13 @@ const Events: React.FC = () => {
             </div>
 
             <div className="event-card__actions">
-                {event.registration_open && (
+                {event.registration_open ? (
                     <button className="btn-register" onClick={() => navigate(`/register?event=${event.event_id}`)}>
                         Register
+                    </button>
+                ) : (
+                    <button className="btn-register-closed" disabled>
+                        Registration Closed
                     </button>
                 )}
                 {showScoreboard && (

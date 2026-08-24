@@ -464,6 +464,23 @@
     cursor: not-allowed;
 }
 
+.status-pending {
+    color: #f59e0b;
+}
+
+.status-approved {
+    color: #10b981;
+}
+
+.status-rejected {
+    color: #ef4444;
+}
+
+.btn-sm {
+    padding: 4px 12px;
+    font-size: 0.8rem;
+}
+
 /* ── Filters (from child dashboards) ── */
 .td-filters {
     display: flex;

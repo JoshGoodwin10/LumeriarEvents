@@ -205,4 +205,26 @@ router.get('/coach/teams', async (req, res) => {
     }
 });
 
+// ─── Download evidence file ────────────────────────────────────
+// GET /api/appeals/:appealId/download
+router.get('/:appealId/download', async (req, res) => {
+    const { appealId } = req.params;
+    try {
+        const [rows] = await db.execute(
+            'SELECT evidence_filename, evidence_data FROM appeal WHERE appeal_id = ?',
+            [appealId]
+        );
+        if (rows.length === 0 || !rows[0].evidence_data) {
+            return res.status(404).json({ message: 'Evidence file not found.' });
+        }
+        const { evidence_filename, evidence_data } = rows[0];
+        res.setHeader('Content-Type', 'application/octet-stream');
+        res.setHeader('Content-Disposition', `attachment; filename="${evidence_filename}"`);
+        res.send(evidence_data);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Failed to download evidence.' });
+    }
+});
+
 module.exports = router;

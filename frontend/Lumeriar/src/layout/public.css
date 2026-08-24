@@ -1113,6 +1113,18 @@ p {
     transform: translateY(-1px);
 }
 
+.btn-register-closed {
+    padding: 0.5rem 1.2rem;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.8rem;
+    cursor: not-allowed;
+    border: 1px solid #ccc;
+    background: #f0f0f0;
+    color: #999;
+    opacity: 0.7;
+}
+
 .btn-details {
     background-color: var(--blue-light);
     color: white;
@@ -1204,8 +1216,8 @@ p {
 }
 
 .modal-content {
-    background: white;
-    border-radius: 16px;
+    background: white !important;
+    border-radius: 16px !important;
     padding: 2rem;
     min-width: 300px;
     max-width: 500px;
