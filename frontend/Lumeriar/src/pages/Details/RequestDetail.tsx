@@ -22,8 +22,8 @@ interface Student {
     role: string;
     dietary_requirements: string | null;
     shirt_size: string;
-    has_consent: boolean;      // flag
-    has_integrity: boolean;    // flag
+    has_consent: boolean;
+    has_integrity: boolean;
 }
 
 interface Coach {
@@ -36,7 +36,7 @@ interface Coach {
     staff_number: string;
     dietary_requirements: string | null;
     shirt_size: string;
-    has_integrity: boolean;    // flag
+    has_integrity: boolean;
 }
 
 interface Team {
@@ -162,18 +162,19 @@ export default function RequestDetail() {
                 <p style={{ marginTop: '1rem' }}><strong>Submitted:</strong> {new Date(team.created_at).toLocaleString()}</p>
             </div>
 
+            {/* ─── Team Information – 2 rows × 4 columns ─── */}
             <div className="detail-card">
                 <h3>Team Information</h3>
-                <div className="detail-grid">
+                <div className="detail-grid detail-grid-2x4">
                     <div><strong>Team Name</strong><br />{team.team_name}</div>
                     <div><strong>School</strong><br />{team.school_name || '—'}</div>
                     <div><strong>Category</strong><br />{team.category || '—'}</div>
                     <div><strong>Thematic Focus</strong><br />{team.theme || '—'}</div>
                     <div><strong>Province</strong><br />{team.province || '—'}</div>
                     <div><strong>Event</strong><br />{team.event_name || '—'}</div>
+                    <div><strong>Project Description</strong><br />{team.project_description || 'No description'}</div>
+                    <div><strong>How heard</strong><br />{team.how_heard || '—'}</div>
                 </div>
-                <div><strong>Project Description</strong><br />{team.project_description || 'No description'}</div>
-                <div><strong>How heard</strong><br />{team.how_heard || '—'}</div>
             </div>
 
             <div className="detail-card">
@@ -243,6 +244,25 @@ export default function RequestDetail() {
                     )}
                 </div>
             )}
+
+            <style>{`
+                .detail-grid-2x4 {
+                    display: grid;
+                    grid-template-columns: repeat(4, 1fr);
+                    gap: 16px;
+                    margin-bottom: 16px;
+                }
+                @media (max-width: 768px) {
+                    .detail-grid-2x4 {
+                        grid-template-columns: repeat(2, 1fr);
+                    }
+                }
+                @media (max-width: 480px) {
+                    .detail-grid-2x4 {
+                        grid-template-columns: 1fr;
+                    }
+                }
+            `}</style>
         </div>
     );
 }

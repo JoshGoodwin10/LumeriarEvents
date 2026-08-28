@@ -10,12 +10,15 @@ const router = express.Router();
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// Helper: find or create school
-const findOrCreateSchool = async (schoolName) => {
+const findOrCreateSchool = async (schoolName, province) => {
     if (!schoolName) return null;
     const [rows] = await db.execute('SELECT school_id FROM school WHERE school_name = ?', [schoolName]);
     if (rows.length > 0) return rows[0].school_id;
-    const [result] = await db.execute('INSERT INTO school (school_name) VALUES (?)', [schoolName]);
+    // Insert with no_teams = 0
+    const [result] = await db.execute(
+        'INSERT INTO school (school_name, province, no_teams) VALUES (?, ?, ?)',
+        [schoolName, province || null, 0]
+    );
     return result.insertId;
 };
 
@@ -63,7 +66,7 @@ router.post('/', upload.any(), async (req, res) => {
             return res.status(400).json({ message: 'Invalid JSON data', error: parseErr.message });
         }
 
-        const schoolId = await findOrCreateSchool(teamData.school);
+        const schoolId = await findOrCreateSchool(teamData.school, teamData.province);
         if (!schoolId) {
             return res.status(400).json({ message: 'School name is required' });
         }

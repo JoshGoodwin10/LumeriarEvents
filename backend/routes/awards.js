@@ -71,12 +71,13 @@ router.post('/generate/:eventId', async (req, res) => {
 
         // Group teams by category
         const categories = [...new Set(teams.map(t => t.category))];
-        // Clear previous awards for this event
-        await db.execute('DELETE FROM awards WHERE event_id = ?', [eventId]);
+
+        // Delete ONLY automated awards (keep "Most Improved")
+        await db.execute('DELETE FROM awards WHERE event_id = ? AND award_type != "Most Improved"', [eventId]);
 
         const awardsToInsert = [];
 
-        // Category place awards
+        // Category place awards (1st, 2nd, 3rd)
         for (const cat of categories) {
             const catTeams = teams.filter(t => t.category === cat).sort((a, b) => b.overall_total - a.overall_total);
             for (let i = 0; i < Math.min(3, catTeams.length); i++) {
@@ -141,7 +142,7 @@ router.post('/generate/:eventId', async (req, res) => {
             }
         }
 
-        // Insert all
+        // Insert all automated awards (skip "Most Improved")
         for (const award of awardsToInsert) {
             await db.execute(
                 `INSERT INTO awards (event_id, team_id, award_type, category_name, rank_position)
@@ -149,6 +150,7 @@ router.post('/generate/:eventId', async (req, res) => {
                 [award.event_id, award.team_id, award.award_type, award.category_name, award.rank_position]
             );
         }
+
         res.json({ message: 'Awards generated successfully.', count: awardsToInsert.length });
     } catch (err) {
         console.error(err);
@@ -164,10 +166,8 @@ router.post('/nominate-most-improved', async (req, res) => {
     }
     try {
         // Remove any existing 'Most Improved' award for this event (only one per event)
-        await db.execute(
-            `DELETE FROM awards WHERE event_id = ? AND award_type = 'Most Improved'`,
-            [event_id]
-        );
+        // DELETE only automated awards (keep "Most Improved")
+        await db.execute('DELETE FROM awards WHERE event_id = ? AND award_type != ?', [eventId, 'Most Improved']);
         // Insert new nomination
         await db.execute(
             `INSERT INTO awards (event_id, team_id, award_type, category_name, rank_position)

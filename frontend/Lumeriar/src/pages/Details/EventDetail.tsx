@@ -430,7 +430,7 @@ export default function EventDetail() {
                     <p className="td-subtitle">{new Date(event.date).toLocaleDateString()} · {event.category || "Uncategorized"}</p>
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    {!allowApprove && (
+                    {allowApprove && (
                         <button className="btn-primary" onClick={generateAwards}>
                             Generate Awards
                         </button>

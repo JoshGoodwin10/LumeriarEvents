@@ -1,4 +1,4 @@
-// src/pages/Dashboards/Dashboard.tsx
+// src/pages/Dashboards/Overview.tsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchSchools } from "../../api/schools";
@@ -8,21 +8,10 @@ import { fetchCoaches } from "../../api/coaches";
 import { fetchEvents } from "../../api/events";
 import { fetchJudges } from "../../api/judges";
 import { fetchTeamRequests } from "../../api/requests";
+import { fetchDocuments } from "../../api/documents";
 import "../../layout/dashboard.css";
 
-
-function StatusBadge({ status }: { status: string }) {
-  const colors: Record<string, string> = {
-    Active: "#10b981", Pending: "#f59e0b", Reviewed: "#3b82f6",
-    Approved: "#10b981", Denied: "#ef4444", Scheduled: "#6366f1", Planning: "#8b5cf6",
-  };
-  const color = colors[status] ?? "#64748b";
-  return (
-    <span className="status-badge" style={{ "--c": color } as React.CSSProperties}>
-      {status}
-    </span>
-  );
-}
+function StatusBadge({ status }: { status: string }) { /* ... unchanged ... */ }
 
 export default function Overview() {
   const navigate = useNavigate();
@@ -34,8 +23,8 @@ export default function Overview() {
     events: 0,
     judges: 0,
     pendingRequests: 0,
+    documents: 0,               // 👈 new field
   });
-  const [recentRequests, setRecentRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -50,12 +39,13 @@ export default function Overview() {
         const judgesPromise = fetchJudges({}).then(res => res.length).catch(e => { console.error("Judges error:", e); return 0; });
         const requestsPromise = fetchTeamRequests({ is_approved: false }).then(res => {
           const pending = res.filter(r => !r.is_approved).length;
-          setRecentRequests(res.slice(0, 5));
           return pending;
         }).catch(e => { console.error("Requests error:", e); return 0; });
+        // 👇 new document promise
+        const documentsPromise = fetchDocuments().then(res => res.length).catch(e => { console.error("Documents error:", e); return 0; });
 
-        const [schoolsCount, teamsCount, studentsCount, coachesCount, eventsCount, judgesCount, pendingCount] = await Promise.all([
-          schoolsPromise, teamsPromise, studentsPromise, coachesPromise, eventsPromise, judgesPromise, requestsPromise
+        const [schoolsCount, teamsCount, studentsCount, coachesCount, eventsCount, judgesCount, pendingCount, docCount] = await Promise.all([
+          schoolsPromise, teamsPromise, studentsPromise, coachesPromise, eventsPromise, judgesPromise, requestsPromise, documentsPromise
         ]);
 
         setCounts({
@@ -66,6 +56,7 @@ export default function Overview() {
           events: eventsCount,
           judges: judgesCount,
           pendingRequests: pendingCount,
+          documents: docCount,    // 👈 store document count
         });
       } catch (err) {
         console.error("Failed to fetch overview data:", err);
@@ -81,9 +72,10 @@ export default function Overview() {
     { label: "Teams", value: counts.teams, path: "/teams", color: "#6366f1" },
     { label: "Students", value: counts.students, path: "/students", color: "#8b5cf6" },
     { label: "Coaches", value: counts.coaches, path: "/coaches", color: "#06b6d4" },
-    { label: "Events", value: counts.events, path: "/events", color: "#10b981" },
+    { label: "Events", value: counts.events, path: "/eventsdash", color: "#10b981" },
     { label: "Judges", value: counts.judges, path: "/judges", color: "#f59e0b" },
     { label: "Requests", value: counts.pendingRequests, path: "/requests", color: "#ef4444" },
+    { label: "Documents", value: counts.documents, path: "/documents", color: "#8b5cf6" },   // 👈 new metric
   ];
 
   if (loading) {
@@ -110,25 +102,6 @@ export default function Overview() {
             <span className="metric-arrow">→</span>
           </button>
         ))}
-      </div>
-
-      <div className="overview-recent">
-        <h2 className="recent-title">Recent Requests</h2>
-        <div className="recent-list">
-          {recentRequests.length === 0 ? (
-            <div className="recent-row">No recent requests</div>
-          ) : (
-            recentRequests.map(req => (
-              <div key={req.request_id} className="recent-row">
-                <div>
-                  <p className="recent-type">{req.team_name}</p>
-                  <p className="recent-by">{req.province || "No province"}</p>
-                </div>
-                <StatusBadge status={req.is_approved ? "Approved" : "Pending"} />
-              </div>
-            ))
-          )}
-        </div>
       </div>
     </div>
   );

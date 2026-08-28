@@ -205,7 +205,7 @@ const Leaderboards: React.FC = () => {
                         )}
                     </div>
 
-                    {/* Awards Section - Public view */}
+                    {/* Awards Section - Public view (centered) */}
                     <div style={{ marginTop: '3rem' }} data-aos="fade-up" data-aos-delay="300">
                         <h2>Awards</h2>
                         {loadingAwards ? (
@@ -215,26 +215,67 @@ const Leaderboards: React.FC = () => {
                                 <p>🏆 Awards for this event will be announced soon.</p>
                             </div>
                         ) : (
-                            Object.entries(groupedAwards).map(([category, catAwards]) => (
-                                <div key={category} style={{ marginBottom: '1.5rem' }}>
-                                    <h3>{category === 'Overall' ? 'Overall Awards' : category}</h3>
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
-                                        {catAwards.map((award, idx) => (
-                                            <div key={award.award_id} className="award-card" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '1rem' }} data-aos="fade-up" data-aos-delay={400 + idx * 100}>
-                                                <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#f39c12' }}>{award.award_type}</div>
-                                                <div style={{ marginTop: '0.5rem' }}>
-                                                    <span style={{ fontWeight: 'bold' }}>{award.team_name}</span>
-                                                    {award.rank_position && <span style={{ marginLeft: '0.5rem', fontSize: '0.8rem', color: '#94a3b8' }}>(#{award.rank_position})</span>}
+                            <div className="awards-grid-container">
+                                {Object.entries(groupedAwards).map(([category, catAwards]) => (
+                                    <div key={category} className="awards-category">
+                                        <h3>{category === 'Overall' ? 'Overall Awards' : category}</h3>
+                                        <div className="awards-grid">
+                                            {catAwards.map((award, idx) => (
+                                                <div key={award.award_id} className="award-card" data-aos="fade-up" data-aos-delay={400 + idx * 100}>
+                                                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#f39c12' }}>{award.award_type}</div>
+                                                    <div style={{ marginTop: '0.5rem' }}>
+                                                        <span style={{ fontWeight: 'bold' }}>{award.team_name}</span>
+                                                        {award.rank_position && <span style={{ marginLeft: '0.5rem', fontSize: '0.8rem', color: '#94a3b8' }}>(#{award.rank_position})</span>}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        ))}
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
-                            ))
+                                ))}
+                            </div>
                         )}
                     </div>
                 </>
             )}
+
+            <style>{`
+                .awards-grid-container {
+                    max-width: 1200px;
+                    margin: 0 auto;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                }
+                .awards-category {
+                    width: 100%;
+                    margin-bottom: 1.5rem;
+                }
+                .awards-category h3 {
+                    text-align: center;
+                    margin-bottom: 1rem;
+                }
+                .awards-grid {
+                    display: flex;
+                    flex-wrap: wrap;
+                    justify-content: center;
+                    gap: 1rem;
+                }
+                .award-card {
+                    flex: 0 0 250px;
+                    max-width: 250px;
+                    background: rgba(255,255,255,0.03);
+                    border: 1px solid rgba(255,255,255,0.08);
+                    border-radius: 12px;
+                    padding: 1rem;
+                    text-align: center;
+                }
+                @media (max-width: 600px) {
+                    .award-card {
+                        flex: 0 0 100%;
+                        max-width: 100%;
+                    }
+                }
+            `}</style>
         </div>
     );
 };

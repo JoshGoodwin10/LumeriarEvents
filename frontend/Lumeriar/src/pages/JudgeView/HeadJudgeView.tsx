@@ -1,10 +1,9 @@
-// src/pages/HeadJudgeView.tsx
+// src/pages/JudgeView/HeadJudgeView.tsx
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import { useAuth } from "../../context/AuthContext";
 import { fetchEventDetails, type TeamInEvent } from "../../api/events";
-import { fetchJudges, type Judge } from "../../api/judges";
 import { approveScore, fetchScoreHistory, type ScoreHistory } from "../../api/scores";
 import "../../layout/dashboard.css";
 
@@ -28,6 +27,15 @@ interface ExtendedTeam extends TeamInEvent {
         rounds: ExtendedRound[];
         overall_total: number;
     };
+}
+
+interface Award {
+    award_id: number;
+    team_id: number;
+    team_name: string;
+    award_type: string;
+    category_name: string | null;
+    rank_position: number | null;
 }
 
 function HistoryModal({ scoreId, onClose }: { scoreId: number; onClose: () => void }) {
@@ -66,6 +74,48 @@ function HistoryModal({ scoreId, onClose }: { scoreId: number; onClose: () => vo
     );
 }
 
+// ─── Combined Award Generation Modal ──────────────────────────
+function GenerateAwardsModal({
+    teams,
+    onClose,
+    onGenerate,
+}: {
+    teams: ExtendedTeam[];
+    onClose: () => void;
+    onGenerate: (selectedTeamId: number | null) => void;
+}) {
+    const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
+
+    const handleGenerate = () => {
+        onGenerate(selectedTeamId);
+    };
+
+    return createPortal(
+        <div className="tdm-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
+            <div className="tdm-box">
+                <div className="tdm-head">
+                    <h2 className="tdm-title">Generate Awards</h2>
+                    <button className="tdm-close" onClick={onClose}>×</button>
+                </div>
+                <div className="tdm-field">
+                    <label className="tdm-label">Nominate Most Improved Team (optional)</label>
+                    <select value={selectedTeamId ?? ""} onChange={e => setSelectedTeamId(e.target.value ? Number(e.target.value) : null)}>
+                        <option value="">-- Skip nomination --</option>
+                        {teams.map(team => (
+                            <option key={team.team_id} value={team.team_id}>{team.team_name}</option>
+                        ))}
+                    </select>
+                </div>
+                <div className="tdm-actions">
+                    <button className="btn-secondary" onClick={onClose}>Cancel</button>
+                    <button className="btn-primary" onClick={handleGenerate}>Generate</button>
+                </div>
+            </div>
+        </div>,
+        document.body
+    );
+}
+
 export default function HeadJudgeView() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
@@ -73,35 +123,47 @@ export default function HeadJudgeView() {
 
     const [event, setEvent] = useState<{ name: string; date: string; category: string | null } | null>(null);
     const [teams, setTeams] = useState<ExtendedTeam[]>([]);
-    const [allJudges, setAllJudges] = useState<Judge[]>([]);
+    const [awards, setAwards] = useState<Award[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadingAwards, setLoadingAwards] = useState(false);
     const [error, setError] = useState("");
     const [viewingHistory, setViewingHistory] = useState<number | null>(null);
-    const [showNominationModal, setShowNominationModal] = useState(false);
-    const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
-    const [nominating, setNominating] = useState(false);
-
-    const getJudgeName = (judgeId: number | null) => {
-        if (!judgeId) return "—";
-        const judge = allJudges.find(j => j.judge_id === judgeId);
-        return judge ? `${judge.first_name} ${judge.surname}` : `Judge #${judgeId}`;
-    };
+    const [showAwardModal, setShowAwardModal] = useState(false);
+    const [processing, setProcessing] = useState(false);
 
     const loadData = async () => {
         if (!id) return;
         setLoading(true);
         try {
-            const [eventDetails, judgesList] = await Promise.all([
-                fetchEventDetails(Number(id)),
-                fetchJudges(),
-            ]);
+            const eventDetails = await fetchEventDetails(Number(id));
             setEvent(eventDetails.event);
             setTeams(eventDetails.teams as ExtendedTeam[]);
-            setAllJudges(judgesList);
+            await fetchAwards();
         } catch (err: any) {
             setError(err.message);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchAwards = async () => {
+        if (!id) return;
+        setLoadingAwards(true);
+        try {
+            const res = await fetch(`/api/awards/event/${id}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setAwards(data);
+            } else {
+                setAwards([]);
+            }
+        } catch (err) {
+            console.error("Awards fetch error:", err);
+            setAwards([]);
+        } finally {
+            setLoadingAwards(false);
         }
     };
 
@@ -112,44 +174,61 @@ export default function HeadJudgeView() {
     const handleApproveScore = async (scoreId: number) => {
         try {
             await approveScore(scoreId);
-            loadData();
+            loadData(); // refresh after approval
         } catch (err: any) {
             alert("Failed to approve score: " + err.message);
         }
     };
 
-    const nominateMostImproved = async () => {
-        if (!selectedTeamId) {
-            alert("Please select a team.");
-            return;
-        }
-        setNominating(true);
+    const handleGenerateAwards = async (selectedTeamId: number | null) => {
+        setProcessing(true);
         try {
-            const res = await fetch("/api/awards/nominate-most-improved", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({ event_id: Number(id), team_id: selectedTeamId }),
+            // 1. If a team was selected, nominate Most Improved
+            if (selectedTeamId) {
+                const res = await fetch('/api/awards/nominate-most-improved', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({ event_id: Number(id), team_id: selectedTeamId }),
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.message || 'Most Improved nomination failed');
+                }
+            }
+
+            // 2. Generate all other awards (preserves Most Improved)
+            const res = await fetch(`/api/awards/generate/${id}`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}` },
             });
             if (!res.ok) {
                 const err = await res.json();
-                throw new Error(err.message || "Nomination failed");
+                throw new Error(err.message || 'Award generation failed');
             }
-            alert("Most Improved award nominated successfully!");
-            setShowNominationModal(false);
-            setSelectedTeamId(null);
+
+            alert('Awards generated successfully!');
+            setShowAwardModal(false);
+            await fetchAwards(); // refresh awards list
         } catch (err: any) {
             alert(err.message);
         } finally {
-            setNominating(false);
+            setProcessing(false);
         }
     };
 
     if (loading) return <div className="td-loading"><span className="spinner-lg" /></div>;
     if (error) return <div className="td-error">{error}</div>;
     if (!event) return <div className="td-empty">Event not found.</div>;
+
+    const groupedAwards = awards.reduce((acc, award) => {
+        const key = award.category_name || 'Overall';
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(award);
+        return acc;
+    }, {} as Record<string, Award[]>);
 
     return (
         <div className="td-root">
@@ -158,17 +237,18 @@ export default function HeadJudgeView() {
                     <h1 className="td-title">{event.name}</h1>
                     <p className="td-subtitle">{new Date(event.date).toLocaleDateString()} · {event.category || "Uncategorized"}</p>
                 </div>
-                <div style={{ display: "flex", gap: "0.5rem" }}>
-                    <button className="btn-primary" onClick={() => setShowNominationModal(true)}>
-                        Nominate Most Improved
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <button className="btn-primary" onClick={() => setShowAwardModal(true)} disabled={processing}>
+                        {processing ? 'Processing...' : 'Generate Awards'}
                     </button>
-                    <Link to="/judge/view" className="btn-secondary">← Back to Dashboard</Link>
                     <Link to={`/head-judge/${id}/appeals`} className="btn-primary">
                         Manage Appeals
                     </Link>
+                    <Link to="/judge/view" className="btn-secondary">← Back to Dashboard</Link>
                 </div>
             </div>
 
+            {/* Teams summary */}
             <div className="detail-card">
                 <h3>Teams</h3>
                 <table className="td-table">
@@ -189,6 +269,7 @@ export default function HeadJudgeView() {
                 </table>
             </div>
 
+            {/* Score Cards with approval */}
             <div className="detail-card">
                 <h3>Score Cards</h3>
                 {teams.map((team) => {
@@ -217,24 +298,13 @@ export default function HeadJudgeView() {
                                                 <td>{b.real_world ?? "—"}</td>
                                                 <td>{b.teamwork ?? "—"}</td>
                                                 <td><strong>{total}</strong></td>
-                                                <td>{getJudgeName(roundScore.judge_id)}</td>
+                                                <td>{roundScore.judge_id ? `Judge #${roundScore.judge_id}` : "—"}</td>
                                                 <td>{isApproved ? "✅ Approved" : "⏳ Pending"}</td>
                                                 <td className="actions">
                                                     {!isApproved && (
-                                                        <button
-                                                            className="btn-icon approve"
-                                                            onClick={() => handleApproveScore(roundScore.score_id)}
-                                                            title="Approve Score"
-                                                        >
-                                                            Approve
-                                                        </button>
+                                                        <button className="btn-icon approve" onClick={() => handleApproveScore(roundScore.score_id)}>Approve</button>
                                                     )}
-                                                    <button
-                                                        className="btn-icon history"
-                                                        onClick={() => setViewingHistory(roundScore.score_id)}
-                                                    >
-                                                        History
-                                                    </button>
+                                                    <button className="btn-icon history" onClick={() => setViewingHistory(roundScore.score_id)}>History</button>
                                                 </td>
                                             </tr>
                                         );
@@ -246,32 +316,40 @@ export default function HeadJudgeView() {
                 })}
             </div>
 
-            {/* Most Improved Nomination Modal */}
-            {showNominationModal && createPortal(
-                <div className="tdm-backdrop" onClick={() => setShowNominationModal(false)}>
-                    <div className="tdm-box" onClick={(e) => e.stopPropagation()}>
-                        <div className="tdm-head">
-                            <h2>Nominate Most Improved Team</h2>
-                            <button className="tdm-close" onClick={() => setShowNominationModal(false)}>×</button>
-                        </div>
-                        <div className="tdm-field">
-                            <label>Select Team</label>
-                            <select value={selectedTeamId ?? ""} onChange={e => setSelectedTeamId(Number(e.target.value))}>
-                                <option value="">-- Select a team --</option>
-                                {teams.map(team => (
-                                    <option key={team.team_id} value={team.team_id}>{team.team_name}</option>
+            {/* Awards Section */}
+            <div className="detail-card">
+                <h3>Awards</h3>
+                {loadingAwards ? (
+                    <div>Loading awards...</div>
+                ) : awards.length === 0 ? (
+                    <p>No awards generated for this event yet.</p>
+                ) : (
+                    Object.entries(groupedAwards).map(([category, catAwards]) => (
+                        <div key={category} style={{ marginBottom: '1.5rem' }}>
+                            <h4 style={{ marginBottom: '0.5rem' }}>{category === 'Overall' ? 'Overall Awards' : category}</h4>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
+                                {catAwards.map(award => (
+                                    <div key={award.award_id} className="award-card" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-medium)', borderRadius: '12px', padding: '1rem' }}>
+                                        <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--color-lumeriar-orange)' }}>{award.award_type}</div>
+                                        <div style={{ marginTop: '0.5rem' }}>
+                                            <span style={{ fontWeight: 'bold' }}>{award.team_name}</span>
+                                            {award.rank_position && <span style={{ marginLeft: '0.5rem', fontSize: '0.8rem', color: 'var(--text-dim)' }}>(#{award.rank_position})</span>}
+                                        </div>
+                                    </div>
                                 ))}
-                            </select>
+                            </div>
                         </div>
-                        <div className="tdm-actions">
-                            <button className="btn-secondary" onClick={() => setShowNominationModal(false)}>Cancel</button>
-                            <button className="btn-primary" onClick={nominateMostImproved} disabled={nominating}>
-                                {nominating ? "Nominating..." : "Nominate"}
-                            </button>
-                        </div>
-                    </div>
-                </div>,
-                document.body
+                    ))
+                )}
+            </div>
+
+            {/* Award Generation Modal */}
+            {showAwardModal && (
+                <GenerateAwardsModal
+                    teams={teams}
+                    onClose={() => setShowAwardModal(false)}
+                    onGenerate={handleGenerateAwards}
+                />
             )}
 
             {/* History Modal */}
@@ -314,6 +392,18 @@ export default function HeadJudgeView() {
                     margin: 6px 0 0 16px;
                     font-size: 12px;
                     color: var(--text-muted);
+                }
+                .award-card {
+                    background: var(--bg-card);
+                    border: 1px solid var(--border-medium);
+                    border-radius: 12px;
+                    padding: 1rem;
+                    text-align: center;
+                }
+                .award-card div:first-child {
+                    font-size: 1.1rem;
+                    font-weight: bold;
+                    color: var(--color-lumeriar-orange);
                 }
             `}</style>
         </div>
