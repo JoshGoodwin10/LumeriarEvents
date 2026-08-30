@@ -1,19 +1,19 @@
 // utils/email.js
 const emailjs = require('@emailjs/nodejs');
 
-async function sendEmail(to, subject, templateParams) {
-    // Prepare parameters for EmailJS template
+async function sendEmail(to, subject, templateParams, templateId = null) {
     const params = {
         ...templateParams,
         to_email: to,
         subject: subject,
     };
+    const effectiveTemplateId = templateId || process.env.EMAILJS_TEMPLATE_ID;
     console.log('📧 Sending email with params:', JSON.stringify(params, null, 2));
 
     try {
         const response = await emailjs.send(
             process.env.EMAILJS_SERVICE_ID,
-            process.env.EMAILJS_TEMPLATE_ID,
+            effectiveTemplateId,
             params,
             {
                 publicKey: process.env.EMAILJS_PUBLIC_KEY,
@@ -28,4 +28,4 @@ async function sendEmail(to, subject, templateParams) {
     }
 }
 
-module.exports = sendEmail;   // 👈 export the function directly
+module.exports = sendEmail;

@@ -243,12 +243,12 @@ router.put("/:id", async (req, res) => {
     }
 });
 
-// DELETE /api/events/:id (unchanged)
+// DELETE /api/events/:id
 router.delete("/:id", async (req, res) => {
     try {
-        const [result] = await db.execute("DELETE FROM event WHERE event_id=?", [req.params.id]);
+        const [result] = await db.execute("DELETE FROM event WHERE event_id = ?", [req.params.id]);
         if (result.affectedRows === 0) return res.status(404).json({ message: "Event not found." });
-        res.json({ message: "Event deleted." });
+        res.json({ message: "Event deleted successfully." });
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Failed to delete event." });

@@ -81,7 +81,7 @@ export default function RequestsDashboard() {
                                 <th>Event</th>
                                 <th>Created</th>
                                 <th>Status</th>
-                                <th>Actions</th>
+                                <th style={{ textAlign: 'center' }}>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -93,9 +93,9 @@ export default function RequestsDashboard() {
                                             {req.team_name}
                                         </Link>
                                     </td>
-                                    <td>{req.school_id ?? <span className="td-null">—</span>}</td>
+                                    <td>{req.school_name ?? <span className="td-null">—</span>}</td>
                                     <td>{req.province ?? <span className="td-null">—</span>}</td>
-                                    <td>{req.event ?? <span className="td-null">—</span>}</td>
+                                    <td>{req.event_name ?? <span className="td-null">—</span>}</td>
                                     <td className="td-date">{new Date(req.created_at).toLocaleDateString()}</td>
                                     <td>
                                         {req.is_approved ?
@@ -103,7 +103,7 @@ export default function RequestsDashboard() {
                                             <span className="status-pending">Pending</span>
                                         }
                                     </td>
-                                    <td className="td-actions">
+                                    <td className="td-actions" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                                         <Link to={`/requests/${req.request_id}`} className="btn-icon view" title="View Details">
                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />

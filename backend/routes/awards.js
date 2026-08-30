@@ -63,21 +63,33 @@ async function getTeamScores(eventId) {
 // POST /api/awards/generate/:eventId
 router.post('/generate/:eventId', async (req, res) => {
     const eventId = req.params.eventId;
+    const { most_improved_team_id } = req.body;
+    if (!most_improved_team_id) {
+        return res.status(400).json({ message: 'Most Improved team must be selected.' });
+    }
+
     try {
         const teams = await getTeamScores(eventId);
         if (teams.length === 0) {
             return res.status(400).json({ message: 'No approved scores found for this event.' });
         }
 
-        // Group teams by category
+        // Delete ALL existing awards for this event
+        await db.execute('DELETE FROM awards WHERE event_id = ?', [eventId]);
+
         const categories = [...new Set(teams.map(t => t.category))];
-
-        // Delete ONLY automated awards (keep "Most Improved")
-        await db.execute('DELETE FROM awards WHERE event_id = ? AND award_type != "Most Improved"', [eventId]);
-
         const awardsToInsert = [];
 
-        // Category place awards (1st, 2nd, 3rd)
+        // 1. Most Improved (from the selection)
+        awardsToInsert.push({
+            event_id: eventId,
+            team_id: most_improved_team_id,
+            award_type: 'Most Improved',
+            category_name: null,
+            rank_position: null
+        });
+
+        // 2. Place awards (1st, 2nd, 3rd) per category
         for (const cat of categories) {
             const catTeams = teams.filter(t => t.category === cat).sort((a, b) => b.overall_total - a.overall_total);
             for (let i = 0; i < Math.min(3, catTeams.length); i++) {
@@ -93,7 +105,7 @@ router.post('/generate/:eventId', async (req, res) => {
             }
         }
 
-        // Excellence in Teamwork
+        // 3. Excellence in Teamwork
         const bestTeamwork = [...teams].sort((a, b) => b.total_teamwork - a.total_teamwork)[0];
         if (bestTeamwork) {
             awardsToInsert.push({
@@ -105,7 +117,7 @@ router.post('/generate/:eventId', async (req, res) => {
             });
         }
 
-        // Best Technical Build
+        // 4. Best Technical Build
         const bestTechnical = [...teams].sort((a, b) => b.total_technical - a.total_technical)[0];
         if (bestTechnical) {
             awardsToInsert.push({
@@ -117,7 +129,7 @@ router.post('/generate/:eventId', async (req, res) => {
             });
         }
 
-        // Future Innovators specific awards
+        // 5. Future Innovators special awards
         const futureTeams = teams.filter(t => t.category === 'Future Innovators');
         if (futureTeams.length > 0) {
             const bestInnovation = [...futureTeams].sort((a, b) => b.total_innovation - a.total_innovation)[0];
@@ -142,11 +154,10 @@ router.post('/generate/:eventId', async (req, res) => {
             }
         }
 
-        // Insert all automated awards (skip "Most Improved")
+        // Insert all awards
         for (const award of awardsToInsert) {
             await db.execute(
-                `INSERT INTO awards (event_id, team_id, award_type, category_name, rank_position)
-                 VALUES (?, ?, ?, ?, ?)`,
+                'INSERT INTO awards (event_id, team_id, award_type, category_name, rank_position) VALUES (?, ?, ?, ?, ?)',
                 [award.event_id, award.team_id, award.award_type, award.category_name, award.rank_position]
             );
         }

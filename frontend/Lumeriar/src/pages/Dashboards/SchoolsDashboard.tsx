@@ -13,7 +13,6 @@ import {
     type SchoolFilterOptions,
 } from "../../api/schools";
 
-// import dashboard css
 import "../../layout/dashboard.css";
 
 // ─── Empty form state ─────────────────────────────────────────
@@ -107,18 +106,25 @@ function SchoolModal({ school, onClose, onSaved }: {
     );
 }
 
-// ─── Delete Confirm ───────────────────────────────────────────
+// ─── Delete Confirm (with error handling) ──────────────────────
 function DeleteConfirm({ school, onClose, onDeleted }: {
     school: School;
     onClose: () => void;
     onDeleted: () => void;
 }) {
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
 
     const confirm = async () => {
         setLoading(true);
-        try { await deleteSchool(school.school_id); onDeleted(); }
-        catch { setLoading(false); }
+        setError("");
+        try {
+            await deleteSchool(school.school_id);
+            onDeleted();
+        } catch (err: any) {
+            setError(err.message || "Failed to delete school.");
+            setLoading(false);
+        }
     };
 
     return createPortal(
@@ -131,6 +137,7 @@ function DeleteConfirm({ school, onClose, onDeleted }: {
                 <p className="tdm-delete-msg">
                     Are you sure you want to delete <strong>{school.school_name}</strong>? This cannot be undone.
                 </p>
+                {error && <p className="tdm-error" style={{ marginTop: '1rem' }}>{error}</p>}
                 <div className="tdm-actions">
                     <button className="btn-secondary" onClick={onClose}>Cancel</button>
                     <button className="btn-danger" onClick={confirm} disabled={loading}>

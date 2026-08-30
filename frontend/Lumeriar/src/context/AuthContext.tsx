@@ -3,11 +3,11 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from '
 
 interface AuthContextType {
   token: string | null;
-  role: 'admin' | 'judge' | null;
+  role: 'admin' | 'judge' | 'coach' | null;
   userId: number | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<{ role: 'admin' | 'judge'; userId: number }>;
+  login: (email: string, password: string) => Promise<{ role: 'admin' | 'judge' | 'coach'; userId: number }>;
   logout: () => void;
 }
 
@@ -15,7 +15,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
-  const [role, setRole] = useState<'admin' | 'judge' | null>(localStorage.getItem('role') as any);
+  const [role, setRole] = useState<'admin' | 'judge' | 'coach' | null>(localStorage.getItem('role') as any);
   const [userId, setUserId] = useState<number | null>(Number(localStorage.getItem('userId')) || null);
   const [isLoading, setIsLoading] = useState(true);
 

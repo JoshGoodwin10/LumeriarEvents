@@ -4,6 +4,8 @@ import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import '../../layout/dashboard.css';
+import EditProfileModal from '../../components/EditProfileModal';
+import ChangePasswordModal from '../../components/ChangePasswordModal';
 
 interface ScoreWithAppeal {
     score_id: number;
@@ -132,6 +134,8 @@ export default function CoachView() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [appealTarget, setAppealTarget] = useState<{ scoreId: number; teamName: string; round: number } | null>(null);
+    const [showEditProfile, setShowEditProfile] = useState(false);
+    const [showChangePassword, setShowChangePassword] = useState(false);
 
     useEffect(() => {
         if (!userId) return;
@@ -173,9 +177,18 @@ export default function CoachView() {
 
     return (
         <div className="judge-view-root">
+            {/* ─── Header – same styling as Judge View ─── */}
             <div className="judge-header">
                 <h1 className="td-title">Coach Dashboard</h1>
-                <button className="btn-secondary" onClick={handleLogout}>Sign out</button>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <button className="btn-secondary" onClick={() => setShowEditProfile(true)}>
+                        Edit Profile
+                    </button>
+                    <button className="btn-secondary" onClick={() => setShowChangePassword(true)}>
+                        Change Password
+                    </button>
+                    <button className="btn-secondary" onClick={handleLogout}>Sign out</button>
+                </div>
             </div>
 
             {teams.length === 0 ? (
@@ -202,7 +215,6 @@ export default function CoachView() {
                                 {team.scores.map(score => {
                                     const total = (score.technical_score || 0) + (score.innovation_design_score || 0) + (score.theme_score || 0) + (score.real_world_score || 0) + (score.teamwork_score || 0);
                                     const isApproved = score.is_approved === 1;
-                                    // Show "Appeal" button only if the score is NOT approved and no appeal yet.
                                     const canAppeal = !isApproved && (!score.appeal_status || score.appeal_status === 'none');
 
                                     return (
@@ -251,6 +263,75 @@ export default function CoachView() {
                     onAppealSubmitted={() => { setAppealTarget(null); reload(); }}
                 />
             )}
+
+            {showEditProfile && (
+                <EditProfileModal
+                    onClose={() => setShowEditProfile(false)}
+                    onSaved={() => setShowEditProfile(false)}
+                />
+            )}
+            {showChangePassword && (
+                <ChangePasswordModal
+                    onClose={() => setShowChangePassword(false)}
+                    onSaved={() => setShowChangePassword(false)}
+                />
+            )}
+
+            {/* ─── CSS ─── */}
+            <style>{`
+                .judge-view-root {
+                    padding: 2rem;
+                    max-width: 1200px;
+                    margin: 0 auto;
+                }
+                .judge-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 2rem;
+                }
+                .detail-card {
+                    background: var(--bg-card);
+                    border: 1px solid var(--border-medium);
+                    border-radius: 12px;
+                    padding: 20px;
+                    margin-bottom: 24px;
+                }
+                .detail-card h2 {
+                    margin-top: 0;
+                    margin-bottom: 1rem;
+                    font-size: 1.3rem;
+                }
+                .btn-appeal {
+                    padding: 4px 12px;
+                    background: #f59e0b;
+                    color: white;
+                    border: none;
+                    border-radius: 6px;
+                    cursor: pointer;
+                }
+                .btn-appeal:hover {
+                    background: #d97706;
+                }
+                .btn-appeal:disabled {
+                    opacity: 0.6;
+                    cursor: not-allowed;
+                }
+                .td-loading, .td-error {
+                    text-align: center;
+                    padding: 40px;
+                }
+                .spinner-lg {
+                    display: inline-block;
+                    width: 32px;
+                    height: 32px;
+                    border: 3px solid rgba(99,102,241,0.2);
+                    border-top-color: #6366f1;
+                    border-radius: 50%;
+                    animation: spin 0.7s linear infinite;
+                }
+                @keyframes spin { to { transform: rotate(360deg); } }
+            `}</style>
         </div>
     );
 }

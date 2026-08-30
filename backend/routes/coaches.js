@@ -142,7 +142,7 @@ router.delete("/:id", async (req, res) => {
     try {
         const [result] = await db.execute("DELETE FROM coach WHERE coach_id = ?", [req.params.id]);
         if (result.affectedRows === 0) return res.status(404).json({ message: "Coach not found." });
-        res.json({ message: "Coach deleted." });
+        res.json({ message: "Coach deleted successfully." });
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Failed to delete coach." });

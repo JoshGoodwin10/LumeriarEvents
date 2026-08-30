@@ -44,7 +44,7 @@ export default function TeamDetail() {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `${label.replace(/\s/g, '_')}_${id}.pdf`;  // adjust extension if needed
+            a.download = `${label.replace(/\s/g, '_')}_${id}.pdf`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -85,7 +85,8 @@ export default function TeamDetail() {
             {/* Team info card */}
             <div className="detail-card">
                 <h3>General Information</h3>
-                <div className="detail-grid">
+                {/* 👇 Flex container for centering */}
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '5rem', flexWrap: 'wrap', textAlign: 'center' }}>
                     <div><strong>Category</strong><br />{team.category || '—'}</div>
                     <div><strong>Theme</strong><br />{team.theme || '—'}</div>
                     <div><strong>Created</strong><br />{new Date(team.created_at).toLocaleDateString()}</div>

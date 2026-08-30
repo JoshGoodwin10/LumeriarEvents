@@ -145,12 +145,19 @@ router.put("/:id", async (req, res) => {
     }
 });
 
-// DELETE /api/schools/:id - unchanged
+// DELETE /api/schools/:id
 router.delete("/:id", async (req, res) => {
+    const schoolId = req.params.id;
     try {
-        const [result] = await db.execute("DELETE FROM school WHERE school_id=?", [req.params.id]);
+        const [teams] = await db.execute("SELECT COUNT(*) AS count FROM team WHERE school_id = ?", [schoolId]);
+        if (teams[0].count > 0) {
+            return res.status(409).json({
+                message: `Cannot delete this school because it has ${teams[0].count} team(s) associated with it. Please remove all teams first.`
+            });
+        }
+        const [result] = await db.execute("DELETE FROM school WHERE school_id = ?", [schoolId]);
         if (result.affectedRows === 0) return res.status(404).json({ message: "School not found." });
-        res.json({ message: "School deleted." });
+        res.json({ message: "School deleted successfully." });
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Failed to delete school." });

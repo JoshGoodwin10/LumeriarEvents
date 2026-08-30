@@ -175,14 +175,28 @@ router.put("/:id", upload.fields([
   }
 });
 
-// ─── DELETE /api/teams/:id ───────────────────────────────────
+// DELETE /api/teams/:id
 router.delete("/:id", async (req, res) => {
+  const teamId = req.params.id;
   try {
-    const [result] = await db.execute("DELETE FROM team WHERE team_id = ?", [req.params.id]);
+    const [students] = await db.execute("SELECT COUNT(*) AS count FROM student WHERE team_id = ?", [teamId]);
+    if (students[0].count > 0) {
+      return res.status(409).json({
+        message: `Cannot delete this team because it has ${students[0].count} student(s) assigned. Please remove all students first.`
+      });
+    }
+    const [eventTeams] = await db.execute("SELECT COUNT(*) AS count FROM event_team WHERE team_id = ?", [teamId]);
+    if (eventTeams[0].count > 0) {
+      return res.status(409).json({
+        message: `Cannot delete this team because it is registered for ${eventTeams[0].count} event(s). Remove the team from events first.`
+      });
+    }
+    // (Coach is set to NULL via DB constraint, so no need to block)
+    const [result] = await db.execute("DELETE FROM team WHERE team_id = ?", [teamId]);
     if (result.affectedRows === 0) return res.status(404).json({ message: "Team not found." });
-    res.json({ message: "Team deleted." });
+    res.json({ message: "Team deleted successfully." });
   } catch (err) {
-    console.error("DELETE /teams/:id error:", err);
+    console.error(err);
     res.status(500).json({ message: "Failed to delete team." });
   }
 });

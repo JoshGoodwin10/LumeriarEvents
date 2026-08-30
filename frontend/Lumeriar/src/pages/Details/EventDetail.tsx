@@ -213,7 +213,7 @@ function HistoryModal({ scoreId, onClose }: { scoreId: number; onClose: () => vo
     );
 }
 
-// ─── Assign Judge Modal (unchanged) ──────────────────────────
+// ─── Assign Judge Modal (with centered button) ──────────────
 function AssignJudgeModal({
     teamName,
     eventTeamId,
@@ -268,7 +268,7 @@ function AssignJudgeModal({
                             <tr>
                                 <th>Name</th>
                                 <th>School</th>
-                                <th>Action</th>
+                                <th style={{ textAlign: 'center' }}>Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -276,7 +276,7 @@ function AssignJudgeModal({
                                 <tr key={judge.judge_id}>
                                     <td>{judge.first_name} {judge.surname}</td>
                                     <td>{judge.school_name || "—"}</td>
-                                    <td>
+                                    <td style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                                         <button
                                             className="btn-primary"
                                             onClick={() => handleAssign(judge.judge_id)}
@@ -301,7 +301,7 @@ function AssignJudgeModal({
     );
 }
 
-// ─── Main Component (with Awards, Most Improved Nomination, and sorted teams) ───
+// ─── Main Component ────────────────────────────────────────────
 export default function EventDetail() {
     const { id } = useParams<{ id: string }>();
     const location = useLocation();
@@ -365,7 +365,6 @@ export default function EventDetail() {
             });
             if (!res.ok) throw new Error('Generation failed');
             alert('Awards generated successfully!');
-            // Reload awards after generation
             const awardsRes = await fetch(`/api/awards/event/${id}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -397,7 +396,6 @@ export default function EventDetail() {
             alert('Most Improved award nominated successfully!');
             setShowNominationModal(false);
             setSelectedTeamId(null);
-            // Refresh awards list
             const awardsRes = await fetch(`/api/awards/event/${id}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -407,14 +405,12 @@ export default function EventDetail() {
         }
     };
 
-    // Sort teams by overall total (highest first)
     const sortedTeams = [...teams].sort((a, b) => b.scores.overall_total - a.scores.overall_total);
 
     if (loading) return <div className="td-loading"><span className="spinner-lg" /></div>;
     if (error) return <div className="td-error">{error}</div>;
     if (!event) return <div className="td-empty">Event not found.</div>;
 
-    // Group awards by category (Overall or specific category)
     const groupedAwards = awards.reduce((acc, award) => {
         const key = award.category_name || 'Overall';
         if (!acc[key]) acc[key] = [];
@@ -450,31 +446,37 @@ export default function EventDetail() {
                 <table className="td-table">
                     <thead>
                         <tr>
-                            <th>Team</th><th>Category</th><th>Total Points</th><th>Actions</th>
+                            <th>Team</th>
+                            <th>Category</th>
+                            <th>Total Points</th>
+                            <th style={{ textAlign: 'center' }}>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {sortedTeams.map((team) => (
-                            <tr key={team.team_id}>
-                                <td className="td-name">{team.team_name}</td>
-                                <td>{team.category}</td>
-                                <td className="td-points"><strong>{team.scores.overall_total}</strong></td>
-                                <td>
-                                    <button
-                                        className="btn-icon assign-judge"
-                                        onClick={() => setAssigningJudge({ event_team_id: team.event_team_id, team_name: team.team_name })}
-                                        title="Assign Judge to Team"
-                                    >
-                                        👨‍⚖️
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
+                        {sortedTeams.map((team) => {
+                            const hasJudge = team.judges && team.judges.length > 0;
+                            return (
+                                <tr key={team.team_id}>
+                                    <td className="td-name">{team.team_name}</td>
+                                    <td>{team.category}</td>
+                                    <td className="td-points"><strong>{team.scores.overall_total}</strong></td>
+                                    <td style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                        <button
+                                            className={hasJudge ? "btn-secondary btn-sm" : "btn-primary btn-sm"}
+                                            onClick={() => setAssigningJudge({ event_team_id: team.event_team_id, team_name: team.team_name })}
+                                            disabled={hasJudge}
+                                        >
+                                            {hasJudge ? 'Assigned' : 'Assign Judge'}
+                                        </button>
+                                    </td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </table>
             </div>
 
-            {/* Score Cards per team (using sorted teams) */}
+            {/* Score Cards per team */}
             <div className="detail-card">
                 <h3>Score Cards</h3>
                 {sortedTeams.map((team) => {
@@ -532,29 +534,45 @@ export default function EventDetail() {
                 })}
             </div>
 
-            {/* Awards Section */}
+            {/* Awards Section – centered */}
             <div className="detail-card">
                 <h3>Awards</h3>
-                {awards.length === 0 ? (
-                    <p>No awards generated for this event yet.</p>
-                ) : (
-                    Object.entries(groupedAwards).map(([category, catAwards]) => (
-                        <div key={category} style={{ marginBottom: '1.5rem' }}>
-                            <h4 style={{ marginBottom: '0.5rem' }}>{category === 'Overall' ? 'Overall Awards' : category}</h4>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
-                                {catAwards.map(award => (
-                                    <div key={award.award_id} className="award-card" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-medium)', borderRadius: '12px', padding: '1rem' }}>
-                                        <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--color-lumeriar-orange)' }}>{award.award_type}</div>
-                                        <div style={{ marginTop: '0.5rem' }}>
-                                            <span style={{ fontWeight: 'bold' }}>{award.team_name}</span>
-                                            {award.rank_position && <span style={{ marginLeft: '0.5rem', fontSize: '0.8rem', color: 'var(--text-dim)' }}>(#{award.rank_position})</span>}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+                    {awards.length === 0 ? (
+                        <p>No awards generated for this event yet.</p>
+                    ) : (
+                        Object.entries(groupedAwards).map(([category, catAwards]) => (
+                            <div key={category} style={{ marginBottom: '1.5rem', width: '100%', maxWidth: '900px' }}>
+                                <h4 style={{ marginBottom: '0.5rem', textAlign: 'center' }}>{category === 'Overall' ? 'Overall Awards' : category}</h4>
+                                <div style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+                                    gap: '1rem',
+                                    justifyItems: 'center',
+                                    justifyContent: 'center'
+                                }}>
+                                    {catAwards.map(award => (
+                                        <div key={award.award_id} className="award-card" style={{
+                                            background: 'var(--bg-card)',
+                                            border: '1px solid var(--border-medium)',
+                                            borderRadius: '12px',
+                                            padding: '1rem',
+                                            width: '100%',
+                                            maxWidth: '250px',
+                                            textAlign: 'center'
+                                        }}>
+                                            <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--color-lumeriar-orange)' }}>{award.award_type}</div>
+                                            <div style={{ marginTop: '0.5rem' }}>
+                                                <span style={{ fontWeight: 'bold' }}>{award.team_name}</span>
+                                                {award.rank_position && <span style={{ marginLeft: '0.5rem', fontSize: '0.8rem', color: 'var(--text-dim)' }}>(#{award.rank_position})</span>}
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                    ))
-                )}
+                        ))
+                    )}
+                </div>
             </div>
 
             {/* Modals (unchanged) */}
@@ -589,7 +607,6 @@ export default function EventDetail() {
                 />
             )}
 
-            {/* Most Improved Nomination Modal */}
             {showNominationModal && createPortal(
                 <div className="tdm-backdrop" onClick={() => setShowNominationModal(false)}>
                     <div className="tdm-box" onClick={(e) => e.stopPropagation()}>

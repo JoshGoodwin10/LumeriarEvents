@@ -74,48 +74,6 @@ function HistoryModal({ scoreId, onClose }: { scoreId: number; onClose: () => vo
     );
 }
 
-// ─── Combined Award Generation Modal ──────────────────────────
-function GenerateAwardsModal({
-    teams,
-    onClose,
-    onGenerate,
-}: {
-    teams: ExtendedTeam[];
-    onClose: () => void;
-    onGenerate: (selectedTeamId: number | null) => void;
-}) {
-    const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
-
-    const handleGenerate = () => {
-        onGenerate(selectedTeamId);
-    };
-
-    return createPortal(
-        <div className="tdm-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
-            <div className="tdm-box">
-                <div className="tdm-head">
-                    <h2 className="tdm-title">Generate Awards</h2>
-                    <button className="tdm-close" onClick={onClose}>×</button>
-                </div>
-                <div className="tdm-field">
-                    <label className="tdm-label">Nominate Most Improved Team (optional)</label>
-                    <select value={selectedTeamId ?? ""} onChange={e => setSelectedTeamId(e.target.value ? Number(e.target.value) : null)}>
-                        <option value="">-- Skip nomination --</option>
-                        {teams.map(team => (
-                            <option key={team.team_id} value={team.team_id}>{team.team_name}</option>
-                        ))}
-                    </select>
-                </div>
-                <div className="tdm-actions">
-                    <button className="btn-secondary" onClick={onClose}>Cancel</button>
-                    <button className="btn-primary" onClick={handleGenerate}>Generate</button>
-                </div>
-            </div>
-        </div>,
-        document.body
-    );
-}
-
 export default function HeadJudgeView() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
@@ -128,8 +86,9 @@ export default function HeadJudgeView() {
     const [loadingAwards, setLoadingAwards] = useState(false);
     const [error, setError] = useState("");
     const [viewingHistory, setViewingHistory] = useState<number | null>(null);
-    const [showAwardModal, setShowAwardModal] = useState(false);
-    const [processing, setProcessing] = useState(false);
+    const [showGenerateModal, setShowGenerateModal] = useState(false);
+    const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
+    const [generating, setGenerating] = useState(false);
 
     const loadData = async () => {
         if (!id) return;
@@ -180,48 +139,42 @@ export default function HeadJudgeView() {
         }
     };
 
-    const handleGenerateAwards = async (selectedTeamId: number | null) => {
-        setProcessing(true);
+    const handleGenerateAwards = async () => {
+        if (!selectedTeamId) {
+            alert('Please select a team for Most Improved.');
+            return;
+        }
+        setGenerating(true);
         try {
-            // 1. If a team was selected, nominate Most Improved
-            if (selectedTeamId) {
-                const res = await fetch('/api/awards/nominate-most-improved', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${token}`,
-                    },
-                    body: JSON.stringify({ event_id: Number(id), team_id: selectedTeamId }),
-                });
-                if (!res.ok) {
-                    const err = await res.json();
-                    throw new Error(err.message || 'Most Improved nomination failed');
-                }
-            }
-
-            // 2. Generate all other awards (preserves Most Improved)
             const res = await fetch(`/api/awards/generate/${id}`, {
                 method: 'POST',
-                headers: { Authorization: `Bearer ${token}` },
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ most_improved_team_id: selectedTeamId }),
             });
             if (!res.ok) {
                 const err = await res.json();
-                throw new Error(err.message || 'Award generation failed');
+                throw new Error(err.message || 'Generation failed');
             }
-
             alert('Awards generated successfully!');
-            setShowAwardModal(false);
+            setShowGenerateModal(false);
+            setSelectedTeamId(null);
             await fetchAwards(); // refresh awards list
         } catch (err: any) {
             alert(err.message);
         } finally {
-            setProcessing(false);
+            setGenerating(false);
         }
     };
 
     if (loading) return <div className="td-loading"><span className="spinner-lg" /></div>;
     if (error) return <div className="td-error">{error}</div>;
     if (!event) return <div className="td-empty">Event not found.</div>;
+
+    // Sort teams by overall total descending (highest first)
+    const sortedTeams = [...teams].sort((a, b) => b.scores.overall_total - a.scores.overall_total);
 
     const groupedAwards = awards.reduce((acc, award) => {
         const key = award.category_name || 'Overall';
@@ -238,8 +191,8 @@ export default function HeadJudgeView() {
                     <p className="td-subtitle">{new Date(event.date).toLocaleDateString()} · {event.category || "Uncategorized"}</p>
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    <button className="btn-primary" onClick={() => setShowAwardModal(true)} disabled={processing}>
-                        {processing ? 'Processing...' : 'Generate Awards'}
+                    <button className="btn-primary" onClick={() => setShowGenerateModal(true)} disabled={generating}>
+                        Generate Awards
                     </button>
                     <Link to={`/head-judge/${id}/appeals`} className="btn-primary">
                         Manage Appeals
@@ -258,7 +211,7 @@ export default function HeadJudgeView() {
                         </tr>
                     </thead>
                     <tbody>
-                        {teams.map((team) => (
+                        {sortedTeams.map((team) => (
                             <tr key={team.team_id}>
                                 <td className="td-name">{team.team_name}</td>
                                 <td>{team.category}</td>
@@ -272,7 +225,7 @@ export default function HeadJudgeView() {
             {/* Score Cards with approval */}
             <div className="detail-card">
                 <h3>Score Cards</h3>
-                {teams.map((team) => {
+                {sortedTeams.map((team) => {
                     const rounds = team.scores.rounds;
                     return (
                         <div key={team.team_id} className="team-score-section">
@@ -316,7 +269,7 @@ export default function HeadJudgeView() {
                 })}
             </div>
 
-            {/* Awards Section */}
+            {/* Awards Section - centered */}
             <div className="detail-card">
                 <h3>Awards</h3>
                 {loadingAwards ? (
@@ -326,10 +279,10 @@ export default function HeadJudgeView() {
                 ) : (
                     Object.entries(groupedAwards).map(([category, catAwards]) => (
                         <div key={category} style={{ marginBottom: '1.5rem' }}>
-                            <h4 style={{ marginBottom: '0.5rem' }}>{category === 'Overall' ? 'Overall Awards' : category}</h4>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
+                            <h4 style={{ marginBottom: '0.5rem', textAlign: 'center' }}>{category === 'Overall' ? 'Overall Awards' : category}</h4>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '1rem' }}>
                                 {catAwards.map(award => (
-                                    <div key={award.award_id} className="award-card" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-medium)', borderRadius: '12px', padding: '1rem' }}>
+                                    <div key={award.award_id} className="award-card" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-medium)', borderRadius: '12px', padding: '1rem', flex: '0 0 250px' }}>
                                         <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--color-lumeriar-orange)' }}>{award.award_type}</div>
                                         <div style={{ marginTop: '0.5rem' }}>
                                             <span style={{ fontWeight: 'bold' }}>{award.team_name}</span>
@@ -343,13 +296,39 @@ export default function HeadJudgeView() {
                 )}
             </div>
 
-            {/* Award Generation Modal */}
-            {showAwardModal && (
-                <GenerateAwardsModal
-                    teams={teams}
-                    onClose={() => setShowAwardModal(false)}
-                    onGenerate={handleGenerateAwards}
-                />
+            {/* Combined Generate & Nominate Modal */}
+            {showGenerateModal && createPortal(
+                <div className="tdm-backdrop" onClick={() => setShowGenerateModal(false)}>
+                    <div className="tdm-box" onClick={(e) => e.stopPropagation()}>
+                        <div className="tdm-head">
+                            <h2 className="tdm-title">Generate Awards</h2>
+                            <button className="tdm-close" onClick={() => setShowGenerateModal(false)}>×</button>
+                        </div>
+                        <div className="tdm-field">
+                            <label className="tdm-label">Select Most Improved Team</label>
+                            <select
+                                className="tdm-input"
+                                value={selectedTeamId ?? ""}
+                                onChange={e => setSelectedTeamId(Number(e.target.value))}
+                            >
+                                <option value="">-- Select a team --</option>
+                                {teams.map(team => (
+                                    <option key={team.team_id} value={team.team_id}>{team.team_name}</option>
+                                ))}
+                            </select>
+                            <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '0.5rem' }}>
+                                You must select a team for Most Improved to generate awards.
+                            </p>
+                        </div>
+                        <div className="tdm-actions">
+                            <button className="btn-secondary" onClick={() => setShowGenerateModal(false)}>Cancel</button>
+                            <button className="btn-primary" onClick={handleGenerateAwards} disabled={generating}>
+                                {generating ? 'Generating...' : 'Generate Awards'}
+                            </button>
+                        </div>
+                    </div>
+                </div>,
+                document.body
             )}
 
             {/* History Modal */}
@@ -399,6 +378,7 @@ export default function HeadJudgeView() {
                     border-radius: 12px;
                     padding: 1rem;
                     text-align: center;
+                    flex: 0 0 250px;
                 }
                 .award-card div:first-child {
                     font-size: 1.1rem;

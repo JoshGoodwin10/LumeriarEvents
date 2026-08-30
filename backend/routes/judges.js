@@ -1,6 +1,8 @@
 const express = require("express");
 const db = require("../db");
 const authMiddleware = require("../middleware/auth");
+const bcrypt = require('bcrypt');                 // 👈 for hashing
+const sendEmail = require('../utils/email');      // 👈 for sending emails
 
 const router = express.Router();
 router.use(authMiddleware);
@@ -10,11 +12,11 @@ router.get("/", async (req, res) => {
     try {
         const { search, school_id, role } = req.query;
         let query = `
-      SELECT j.*, s.school_name
-      FROM judge j
-      LEFT JOIN school s ON j.school_id = s.school_id
-      WHERE 1=1
-    `;
+            SELECT j.*, s.school_name
+            FROM judge j
+            LEFT JOIN school s ON j.school_id = s.school_id
+            WHERE 1=1
+        `;
         const params = [];
 
         if (search) {
@@ -74,12 +76,33 @@ router.post("/", async (req, res) => {
     }
 
     try {
+        // 1. Generate password and hash it BEFORE insert
+        const rawPassword = Math.random().toString(36).slice(-8);
+        const hashedPassword = bcrypt.hashSync(rawPassword, 10);
+
+        // 2. Insert judge WITH password_hash included
         const [result] = await db.execute(
-            `INSERT INTO judge (first_name, surname, school_id, email, phone_no, date_of_birth, role)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [first_name, surname, school_id || null, email || null, phone_no || null, date_of_birth || null, role || null]
+            `INSERT INTO judge (first_name, surname, school_id, email, phone_no, date_of_birth, role, password_hash)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [first_name, surname, school_id || null, email || null, phone_no || null, date_of_birth || null, role || null, hashedPassword]
         );
-        res.status(201).json({ message: "Judge created.", judge_id: result.insertId });
+        const judgeId = result.insertId;
+
+        // 3. Send email with credentials
+        await sendEmail(
+            email,
+            'Your Lumeriar Judge Account',
+            {
+                name: `${first_name} ${surname}`,
+                role: 'Judge',
+                email: email,
+                password: rawPassword,
+                login_url: process.env.FRONTEND_URL + '/login',
+            },
+            process.env.EMAILJS_TEMPLATE_PASSWORD
+        );
+
+        res.status(201).json({ message: "Judge created and login sent.", judge_id: judgeId });
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Failed to create judge." });
@@ -92,7 +115,7 @@ router.put("/:id", async (req, res) => {
     try {
         const [result] = await db.execute(
             `UPDATE judge SET first_name=?, surname=?, school_id=?, email=?, phone_no=?, date_of_birth=?, role=?
-       WHERE judge_id=?`,
+             WHERE judge_id=?`,
             [first_name, surname, school_id || null, email || null, phone_no || null, date_of_birth || null, role || null, req.params.id]
         );
         if (result.affectedRows === 0) return res.status(404).json({ message: "Judge not found." });
@@ -105,28 +128,33 @@ router.put("/:id", async (req, res) => {
 
 // DELETE /api/judges/:id
 router.delete("/:id", async (req, res) => {
+    const judgeId = req.params.id;
     try {
-        const [result] = await db.execute("DELETE FROM judge WHERE judge_id=?", [req.params.id]);
+        const [events] = await db.execute("SELECT COUNT(*) AS count FROM event WHERE head_judge = ?", [judgeId]);
+        if (events[0].count > 0) {
+            return res.status(409).json({
+                message: `Cannot delete this judge because they are the head judge for ${events[0].count} event(s). Please reassign head judge first.`
+            });
+        }
+        // Scores will have judge_id set to NULL automatically (FK ON DELETE SET NULL)
+        const [result] = await db.execute("DELETE FROM judge WHERE judge_id = ?", [judgeId]);
         if (result.affectedRows === 0) return res.status(404).json({ message: "Judge not found." });
-        res.json({ message: "Judge deleted." });
+        res.json({ message: "Judge deleted successfully." });
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Failed to delete judge." });
     }
 });
 
-// ─── New endpoints for judge view ─────────────────────────────
+// ─── Judge view endpoints (unchanged) ─────────────────────────
 // GET /api/judges/:id/events-as-head
-// Returns events where this judge is the head judge
 router.get("/:id/events-as-head", async (req, res) => {
+    // ... same as before
     const judgeId = parseInt(req.params.id);
-    const currentUser = req.user; // from auth middleware: { userId, role, ... }
-
-    // Authorization: admin can view any judge; judge can only view own data
+    const currentUser = req.user;
     if (currentUser.role !== 'admin' && currentUser.userId !== judgeId) {
         return res.status(403).json({ message: 'Forbidden' });
     }
-
     try {
         const [rows] = await db.execute(`
             SELECT e.*
@@ -142,26 +170,19 @@ router.get("/:id/events-as-head", async (req, res) => {
 });
 
 // GET /api/judges/:id/teams-to-score
-// Returns distinct teams (with event details) for which this judge has recorded scores (approved or pending)
 router.get("/:id/teams-to-score", async (req, res) => {
+    // ... same as before
     const judgeId = parseInt(req.params.id);
     const currentUser = req.user;
-
     if (currentUser.role !== 'admin' && currentUser.userId !== judgeId) {
         return res.status(403).json({ message: 'Forbidden' });
     }
-
     try {
         const [rows] = await db.execute(`
             SELECT DISTINCT
-                t.team_id,
-                t.team_name,
-                e.event_id,
-                e.name AS event_name,
-                e.date AS event_date,
-                s.round,
-                s.is_approved,
-                s.score_id
+                t.team_id, t.team_name,
+                e.event_id, e.name AS event_name, e.date AS event_date,
+                s.round, s.is_approved, s.score_id
             FROM score s
             JOIN event_team et ON s.event_team_id = et.event_team_id
             JOIN team t ON et.team_id = t.team_id
@@ -170,7 +191,6 @@ router.get("/:id/teams-to-score", async (req, res) => {
             ORDER BY e.date DESC, t.team_name
         `, [judgeId]);
 
-        // Group by team+event to avoid duplicate rows if multiple rounds exist
         const grouped = {};
         for (const row of rows) {
             const key = `${row.event_id}-${row.team_id}`;

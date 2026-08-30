@@ -109,10 +109,17 @@ router.put("/:id", async (req, res) => {
 
 // DELETE /api/students/:id
 router.delete("/:id", async (req, res) => {
+    const studentId = req.params.id;
     try {
-        const [result] = await db.execute("DELETE FROM student WHERE student_id=?", [req.params.id]);
-        if (result.affectedRows === 0) return res.status(404).json({ message: "Student not found." });
-        res.json({ message: "Student deleted." });
+        const [student] = await db.execute("SELECT team_id FROM student WHERE student_id = ?", [studentId]);
+        if (student.length === 0) return res.status(404).json({ message: "Student not found." });
+        if (student[0].team_id !== null) {
+            return res.status(409).json({
+                message: "Cannot delete this student because they are still assigned to a team. Please remove them from the team first."
+            });
+        }
+        await db.execute("DELETE FROM student WHERE student_id = ?", [studentId]);
+        res.json({ message: "Student deleted successfully." });
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Failed to delete student." });

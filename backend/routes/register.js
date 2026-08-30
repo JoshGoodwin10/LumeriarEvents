@@ -299,33 +299,35 @@ router.put('/:id/approve', async (req, res) => {
 
         // 2. Find or create coach by email (avoid duplication)
         let coachId = null;
+        // After coach is created/retrieved (coachId)
         if (coachReq) {
-            const [existingCoach] = await connection.execute(
-                `SELECT coach_id FROM coach WHERE email = ?`,
-                [coachReq.email]
+            // Check if coach already has a password
+            const [coachRows] = await connection.execute(
+                'SELECT password_hash FROM coach WHERE coach_id = ?',
+                [coachId]
             );
-            if (existingCoach.length > 0) {
-                coachId = existingCoach[0].coach_id;
-            } else {
-                const [coachResult] = await connection.execute(
-                    `INSERT INTO coach 
-                    (first_name, surname, email, phone_no, date_of_birth, staff_number, 
-                     dietary_requirements, shirt_size, signed_integrity_declaration, school_id, created_at)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
-                    [
-                        coachReq.first_name,
-                        coachReq.surname,
-                        coachReq.email,
-                        coachReq.phone_no,
-                        coachReq.date_of_birth,
-                        coachReq.staff_number,
-                        coachReq.dietary_requirements,
-                        coachReq.shirt_size,
-                        coachReq.signed_integrity_declaration,
-                        teamReq.school_id
-                    ]
+            if (coachRows.length === 1 && !coachRows[0].password_hash) {
+                // Generate password: first_name + surname + year_of_birth
+                const rawPassword = `${coachReq.first_name}${coachReq.surname}${new Date(coachReq.date_of_birth).getFullYear()}`;
+                const hashedPassword = bcrypt.hashSync(rawPassword, 10);
+                await connection.execute(
+                    'UPDATE coach SET password_hash = ? WHERE coach_id = ?',
+                    [hashedPassword, coachId]
                 );
-                coachId = coachResult.insertId;
+
+                // After generating password and hashing it:
+                await sendEmail(
+                    coachReq.email,
+                    'Your Lumeriar Coach Account',
+                    {
+                        name: `${coachReq.first_name} ${coachReq.surname}`,
+                        role: 'Coach',
+                        email: coachReq.email,
+                        password: rawPassword
+                    },
+                    process.env.EMAILJS_TEMPLATE_PASSWORD   // use the unified password template
+                );
+                console.log(`✅ Coach login created for ${coachReq.email}`);
             }
         }
 

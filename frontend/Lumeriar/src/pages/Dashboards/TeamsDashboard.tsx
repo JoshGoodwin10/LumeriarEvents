@@ -208,11 +208,20 @@ function DeleteConfirm({ team, onClose, onDeleted }: {
   onDeleted: () => void;
 }) {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
   const confirm = async () => {
     setLoading(true);
-    try { await deleteTeam(team.team_id); onDeleted(); }
-    catch { setLoading(false); }
+    setError("");
+    try {
+      await deleteTeam(team.team_id);
+      onDeleted();
+    } catch (err: any) {
+      setError(err.message || "Failed to delete team.");
+      setLoading(false);
+    }
   };
+
   return createPortal(
     <div className="tdm-backdrop" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="tdm-box tdm-box-sm">
@@ -220,10 +229,15 @@ function DeleteConfirm({ team, onClose, onDeleted }: {
           <h2 className="tdm-title">Delete Team</h2>
           <button className="tdm-close" onClick={onClose}>×</button>
         </div>
-        <p className="tdm-delete-msg">Are you sure you want to delete <strong>{team.team_name}</strong>? This cannot be undone.</p>
+        <p className="tdm-delete-msg">
+          Delete <strong>{team.team_name}</strong>? This action cannot be undone.
+        </p>
+        {error && <p className="tdm-error" style={{ marginTop: '1rem' }}>{error}</p>}
         <div className="tdm-actions">
           <button className="btn-secondary" onClick={onClose}>Cancel</button>
-          <button className="btn-danger" onClick={confirm} disabled={loading}>{loading ? <span className="spinner-sm" /> : "Delete"}</button>
+          <button className="btn-danger" onClick={confirm} disabled={loading}>
+            {loading ? <span className="spinner-sm" /> : "Delete"}
+          </button>
         </div>
       </div>
     </div>,

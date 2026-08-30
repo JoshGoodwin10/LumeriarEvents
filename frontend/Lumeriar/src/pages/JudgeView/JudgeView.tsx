@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import '../../layout/dashboard.css';
+import EditProfileModal from '../../components/EditProfileModal';
+import ChangePasswordModal from '../../components/ChangePasswordModal';
 
 export default function JudgeView() {
     const { userId, token, logout } = useAuth();
@@ -11,6 +13,8 @@ export default function JudgeView() {
     const [scoringEvents, setScoringEvents] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [showEditProfile, setShowEditProfile] = useState(false);
+    const [showChangePassword, setShowChangePassword] = useState(false);
 
     useEffect(() => {
         if (!userId) return;
@@ -62,7 +66,15 @@ export default function JudgeView() {
         <div className="judge-view-root">
             <div className="judge-header">
                 <h1 className="td-title">Judge Dashboard</h1>
-                <button className="btn-secondary" onClick={handleLogout}>Sign out</button>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <button className="btn-secondary" onClick={() => setShowEditProfile(true)}>
+                        Edit Profile
+                    </button>
+                    <button className="btn-secondary" onClick={() => setShowChangePassword(true)}>
+                        Change Password
+                    </button>
+                    <button className="btn-secondary" onClick={handleLogout}>Sign out</button>
+                </div>
             </div>
 
             {/* Events where head judge */}
@@ -108,6 +120,19 @@ export default function JudgeView() {
                     </div>
                 )}
             </div>
+
+            {showEditProfile && (
+                <EditProfileModal
+                    onClose={() => setShowEditProfile(false)}
+                    onSaved={() => setShowEditProfile(false)}
+                />
+            )}
+            {showChangePassword && (
+                <ChangePasswordModal
+                    onClose={() => setShowChangePassword(false)}
+                    onSaved={() => setShowChangePassword(false)}
+                />
+            )}
 
             <style>{`
                 .judge-view-root {
