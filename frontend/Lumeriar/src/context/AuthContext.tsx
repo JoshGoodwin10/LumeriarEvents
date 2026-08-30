@@ -1,5 +1,6 @@
 // context/AuthContext.tsx
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { API_BASE } from '../api/client';  // ✅ import the base URL
 
 interface AuthContextType {
   token: string | null;
@@ -19,13 +20,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [userId, setUserId] = useState<number | null>(Number(localStorage.getItem('userId')) || null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check token validity on mount (optional)
   useEffect(() => {
     setIsLoading(false);
   }, []);
 
   const login = async (email: string, password: string) => {
-    const res = await fetch('/api/auth/login', {
+    // ✅ Use API_BASE to build the full URL
+    const res = await fetch(`${API_BASE}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
