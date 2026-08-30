@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE } from '../../api/client';  // adjust path
 
 interface Document {
     document_id: number;
@@ -17,7 +18,7 @@ const RulesDocs: React.FC = () => {
     useEffect(() => {
         const fetchDocuments = async () => {
             try {
-                const res = await fetch('/api/documents');
+                const res = await fetch(`${API_BASE}/api/documents`);
                 if (!res.ok) throw new Error('Failed to load documents');
                 const data = await res.json();
                 setDocs(data);

@@ -3,8 +3,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import '../../layout/details.css';
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+import { API_BASE } from '../../api/client';  // adjust path
 
 function authHeaders() {
     const token = localStorage.getItem('token');
@@ -74,7 +73,9 @@ export default function RequestDetail() {
     useEffect(() => {
         const fetchDetails = async () => {
             try {
-                const res = await fetch(`/api/register/${id}`);
+                const res = await fetch(`${API_BASE}/api/register/${id}`, {
+                    headers: authHeaders(),
+                });
                 if (!res.ok) throw new Error('Failed to load request');
                 const data = await res.json();
                 setTeam(data.team);
@@ -93,7 +94,7 @@ export default function RequestDetail() {
         if (!window.confirm('Approve this registration request?')) return;
         setApproving(true);
         try {
-            const res = await fetch(`/api/register/${id}/approve`, {
+            const res = await fetch(`${API_BASE}/api/register/${id}/approve`, {
                 method: 'PUT',
                 headers: authHeaders(),
             });
@@ -110,7 +111,7 @@ export default function RequestDetail() {
     const handleReject = async () => {
         setRejecting(true);
         try {
-            const res = await fetch(`/api/register/${id}/reject`, {
+            const res = await fetch(`${API_BASE}/api/register/${id}/reject`, {
                 method: 'PUT',
                 headers: authHeaders(),
             });

@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom';
 import '../../layout/dashboard.css';
 import EditProfileModal from '../../components/EditProfileModal';
 import ChangePasswordModal from '../../components/ChangePasswordModal';
+import { API_BASE } from '../../api/client';  // adjust path
 
 interface ScoreWithAppeal {
     score_id: number;
@@ -67,7 +68,7 @@ function AppealModal({
         if (file) formData.append('evidence', file);
 
         try {
-            const res = await fetch('/api/appeals', {
+            const res = await fetch(`${API_BASE}/api/appeals`, {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${token}` },
                 body: formData,
@@ -141,7 +142,7 @@ export default function CoachView() {
         if (!userId) return;
         const fetchTeams = async () => {
             try {
-                const res = await fetch(`/api/appeals/coach/teams`, {
+                const res = await fetch(`${API_BASE}/api/appeals/coach/teams`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 if (!res.ok) throw new Error('Failed to load team scores');
@@ -163,7 +164,7 @@ export default function CoachView() {
 
     const reload = () => {
         setLoading(true);
-        fetch(`/api/appeals/coach/teams`, {
+        fetch(`${API_BASE}/api/appeals/coach/teams`, {
             headers: { Authorization: `Bearer ${token}` },
         })
             .then(res => res.json())

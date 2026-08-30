@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE } from '../api/client';  // adjust path
 
 interface ChangePasswordModalProps {
     onClose: () => void;
@@ -29,7 +30,7 @@ export default function ChangePasswordModal({ onClose, onSaved }: ChangePassword
         setSaving(true);
         setError('');
         try {
-            const res = await fetch('/api/auth/change-password', {
+            const res = await fetch(`${API_BASE}/api/auth/change-password`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

@@ -1,6 +1,7 @@
 // src/pages/EventDetail.tsx
 import { useState, useEffect } from "react";
 import { useParams, Link, useLocation } from "react-router-dom";
+import { API_BASE } from '../../api/client';  // adjust path
 import { createPortal } from "react-dom";
 import { fetchJudges, type Judge } from "../../api/judges";
 import { updateHeadJudge } from "../../api/events";
@@ -236,7 +237,7 @@ function AssignJudgeModal({
         setError("");
         try {
             const token = localStorage.getItem("token");
-            const res = await fetch(`/api/scores/assign-team-judge`, {
+            const res = await fetch(`${API_BASE}/api/scores/assign-team-judge`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -399,7 +400,7 @@ export default function EventDetail() {
             const [eventDetails, judgesList, awardsList] = await Promise.all([
                 fetchEventDetails(Number(id)),
                 fetchJudges(),
-                fetch(`/api/awards/event/${id}`, {
+                fetch(`${API_BASE}/api/awards/event/${id}`, {
                     headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
                 }).then(res => res.ok ? res.json() : []),
             ]);
@@ -431,13 +432,13 @@ export default function EventDetail() {
         if (!window.confirm('Generate awards for this event? Existing awards will be replaced.')) return;
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`/api/awards/generate/${id}`, {
+            const res = await fetch(`${API_BASE}/api/awards/generate/${id}`, {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (!res.ok) throw new Error('Generation failed');
             alert('Awards generated successfully!');
-            const awardsRes = await fetch(`/api/awards/event/${id}`, {
+            const awardsRes = await fetch(`${API_BASE}/api/awards/event/${id}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             if (awardsRes.ok) setAwards(await awardsRes.json());
@@ -453,7 +454,7 @@ export default function EventDetail() {
         }
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('/api/awards/nominate-most-improved', {
+            const res = await fetch(`${API_BASE}/api/awards/nominate-most-improved`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -468,7 +469,7 @@ export default function EventDetail() {
             alert('Most Improved award nominated successfully!');
             setShowNominationModal(false);
             setSelectedTeamId(null);
-            const awardsRes = await fetch(`/api/awards/event/${id}`, {
+            const awardsRes = await fetch(`${API_BASE}/api/awards/event/${id}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             if (awardsRes.ok) setAwards(await awardsRes.json());

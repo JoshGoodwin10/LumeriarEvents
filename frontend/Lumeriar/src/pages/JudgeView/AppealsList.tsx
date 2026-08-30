@@ -4,6 +4,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { createPortal } from 'react-dom';
 import '../../layout/dashboard.css';
+import { API_BASE } from '../../api/client';  // adjust path
 
 interface Appeal {
     appeal_id: number;
@@ -51,7 +52,7 @@ function DecisionModal({
         if (!appeal.evidence_filename) return;
         setDownloading(true);
         try {
-            const res = await fetch(`/api/appeals/${appeal.appeal_id}/download`, {
+            const res = await fetch(`${API_BASE}/api/appeals/${appeal.appeal_id}/download`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             if (!res.ok) {
@@ -183,7 +184,7 @@ export default function AppealsList() {
         if (!eventId) return;
         const fetchAppeals = async () => {
             try {
-                const res = await fetch(`/api/appeals/event/${eventId}`, {
+                const res = await fetch(`${API_BASE}/api/appeals/event/${eventId}`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 if (!res.ok) throw new Error('Failed to fetch appeals');
@@ -202,7 +203,7 @@ export default function AppealsList() {
         if (!selectedAppeal) return;
         setProcessing(selectedAppeal.appeal_id);
         try {
-            const res = await fetch(`/api/appeals/${selectedAppeal.appeal_id}`, {
+            const res = await fetch(`${API_BASE}/api/appeals/${selectedAppeal.appeal_id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -215,7 +216,7 @@ export default function AppealsList() {
                 throw new Error(err.message || 'Failed to process appeal');
             }
             // Refresh appeals list
-            const updated = await fetch(`/api/appeals/event/${eventId}`, {
+            const updated = await fetch(`${API_BASE}/api/appeals/event/${eventId}`, {
                 headers: { Authorization: `Bearer ${token}` },
             }).then(r => r.json());
             setAppeals(updated);

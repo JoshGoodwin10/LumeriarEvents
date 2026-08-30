@@ -6,6 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 import { fetchEventDetails, type TeamInEvent } from "../../api/events";
 import { approveScore, fetchScoreHistory, type ScoreHistory } from "../../api/scores";
 import "../../layout/dashboard.css";
+import { API_BASE } from '../../api/client';  // adjust path
 
 interface ExtendedRound {
     round: number;
@@ -109,7 +110,7 @@ export default function HeadJudgeView() {
         if (!id) return;
         setLoadingAwards(true);
         try {
-            const res = await fetch(`/api/awards/event/${id}`, {
+            const res = await fetch(`${API_BASE}/api/awards/event/${id}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             if (res.ok) {
@@ -146,7 +147,7 @@ export default function HeadJudgeView() {
         }
         setGenerating(true);
         try {
-            const res = await fetch(`/api/awards/generate/${id}`, {
+            const res = await fetch(`${API_BASE}/api/awards/generate/${id}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

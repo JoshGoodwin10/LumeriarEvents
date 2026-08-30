@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE } from '../api/client';  // adjust path
 
 interface EditProfileModalProps {
     onClose: () => void;
@@ -25,7 +26,7 @@ export default function EditProfileModal({ onClose, onSaved }: EditProfileModalP
     useEffect(() => {
         const fetchProfile = async () => {
             try {
-                const res = await fetch('/api/auth/profile', {
+                const res = await fetch(`${API_BASE}/api/auth/profile`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 if (!res.ok) {
@@ -59,7 +60,7 @@ export default function EditProfileModal({ onClose, onSaved }: EditProfileModalP
         setSaving(true);
         setError('');
         try {
-            const res = await fetch('/api/auth/profile', {
+            const res = await fetch(`${API_BASE}/api/auth/profile`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

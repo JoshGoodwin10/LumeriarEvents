@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import '../../layout/dashboard.css';
 import EditProfileModal from '../../components/EditProfileModal';
 import ChangePasswordModal from '../../components/ChangePasswordModal';
+import { API_BASE } from '../../api/client';  // adjust path
 
 export default function JudgeView() {
     const { userId, token, logout } = useAuth();
@@ -21,14 +22,14 @@ export default function JudgeView() {
         const fetchData = async () => {
             try {
                 // Events where judge is head
-                const eventsRes = await fetch(`/api/judges/${userId}/events-as-head`, {
+                const eventsRes = await fetch(`${API_BASE}/api/judges/${userId}/events-as-head`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 const eventsData = await eventsRes.json();
                 setEventsHead(eventsData);
 
                 // Teams‑to‑score – we only need distinct events
-                const teamsRes = await fetch(`/api/judges/${userId}/teams-to-score`, {
+                const teamsRes = await fetch(`${API_BASE}/api/judges/${userId}/teams-to-score`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 const teamsData = await teamsRes.json();

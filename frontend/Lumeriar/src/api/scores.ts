@@ -58,7 +58,7 @@ export async function fetchEventScores(eventId: number): Promise<Score[]> {
 
 // Save (create or update) a score – uses event_team_id
 export async function saveScore(payload: ScorePayload): Promise<{ score_id: number }> {
-    const res = await authFetch(`/api/scores`, {
+    const res = await authFetch(`${API_BASE}/api/scores`, {
         method: 'POST',
         body: JSON.stringify(payload),
     });
@@ -67,7 +67,7 @@ export async function saveScore(payload: ScorePayload): Promise<{ score_id: numb
 
 // Approve a score
 export async function approveScore(scoreId: number): Promise<void> {
-    await authFetch(`/api/scores/${scoreId}/approve`, { method: 'PUT' });
+    await authFetch(`${API_BASE}/api/scores/${scoreId}/approve`, { method: 'PUT' });
 }
 
 // Fetch history for a score

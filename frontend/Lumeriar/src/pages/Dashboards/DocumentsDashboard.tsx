@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import "../../layout/dashboard.css";
+import { API_BASE } from '../../api/client';  // adjust path
 
 interface Document {
     document_id: number;
@@ -42,7 +43,7 @@ function UploadModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =>
         data.append("file", form.file);
         try {
             const token = localStorage.getItem("token");
-            const res = await fetch("/api/documents", {
+            const res = await fetch(`${API_BASE}/api/documents`, {
                 method: "POST",
                 headers: { Authorization: `Bearer ${token}` },
                 body: data,
@@ -108,7 +109,7 @@ function DeleteConfirm({ doc, onClose, onDeleted }: { doc: Document; onClose: ()
         setLoading(true);
         try {
             const token = localStorage.getItem("token");
-            const res = await fetch(`/api/documents/${doc.document_id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+            const res = await fetch(`${API_BASE}/api/documents/${doc.document_id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
             if (!res.ok) throw new Error("Delete failed");
             onDeleted();
         } catch (err: any) {
@@ -147,7 +148,7 @@ export default function DocumentsDashboard() {
         setLoading(true);
         try {
             const token = localStorage.getItem("token");
-            const res = await fetch("/api/documents/all", { headers: { Authorization: `Bearer ${token}` } });
+            const res = await fetch(`${API_BASE}/api/documents/all`, { headers: { Authorization: `Bearer ${token}` } });
             const data = await res.json();
             setDocs(data);
         } catch (err) {
@@ -159,7 +160,7 @@ export default function DocumentsDashboard() {
 
     useEffect(() => { load(); }, [load]);
 
-    const getDownloadUrl = (id: number) => `/api/documents/${id}/download`;
+    const getDownloadUrl = (id: number) => `${API_BASE}/api/documents/${id}/download`;
 
     return (
         <div className="td-root">

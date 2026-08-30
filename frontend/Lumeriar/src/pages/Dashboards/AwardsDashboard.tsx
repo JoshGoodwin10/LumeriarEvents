@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { fetchEvents, type Event } from '../../api/events';
 import '../../layout/dashboard.css';
+import { API_BASE } from '../../api/client';  // adjust path
 
 export default function AwardsDashboard() {
     const [allEvents, setAllEvents] = useState<Event[]>([]);
@@ -75,7 +76,7 @@ export default function AwardsDashboard() {
     useEffect(() => {
         if (!selectedEventId) return;
         setLoading(true);
-        fetch(`/api/awards/event/${selectedEventId}`, {
+        fetch(`${API_BASE}/api/awards/event/${selectedEventId}`, {
             headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         })
             .then(res => res.json())

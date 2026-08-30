@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { API_BASE } from '../../api/client';  // adjust path
 
 // --- Types ---
 interface EventInfo {
@@ -125,7 +126,7 @@ const Register: React.FC = () => {
         }
         const fetchEvent = async () => {
             try {
-                const res = await fetch(`/api/events/${eventId}`);
+                const res = await fetch(`${API_BASE}/api/events/${eventId}`);
                 if (!res.ok) throw new Error('Event not found');
                 const data = await res.json();
                 setEvent(data);
@@ -147,7 +148,7 @@ const Register: React.FC = () => {
     useEffect(() => {
         const fetchSchools = async () => {
             try {
-                const res = await fetch('/api/schools/public');
+                const res = await fetch(`${API_BASE}/api/schools/public`);
                 if (res.ok) {
                     const data = await res.json();
                     setSchools(data);
@@ -289,7 +290,7 @@ const Register: React.FC = () => {
             });
             formData.append('coach_integrity', coach.signed_integrity_declaration!);
 
-            const response = await fetch('/api/register', {
+            const response = await fetch(`${API_BASE}/api/register`, {
                 method: 'POST',
                 body: formData,
             });

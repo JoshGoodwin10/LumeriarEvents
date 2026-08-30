@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { API_BASE } from '../../api/client';  // adjust path
 
 interface Event {
     event_id: number;
@@ -57,7 +58,7 @@ const Leaderboards: React.FC = () => {
 
     const fetchEvents = async () => {
         try {
-            const res = await fetch('/api/events');
+            const res = await fetch(`${API_BASE}/api/events`);
             if (!res.ok) throw new Error('Failed to fetch events');
             const data = await res.json();
             setEvents(data);
@@ -70,7 +71,7 @@ const Leaderboards: React.FC = () => {
         setLoading(true);
         setError('');
         try {
-            const res = await fetch(`/api/events/${id}/leaderboard`);
+            const res = await fetch(`${API_BASE}/api/events/${id}/leaderboard`);
             if (!res.ok) throw new Error('Failed to load leaderboard');
             const data = await res.json();
             setLeaderboard(data);
@@ -84,7 +85,7 @@ const Leaderboards: React.FC = () => {
     const fetchAwards = async (id: string) => {
         setLoadingAwards(true);
         try {
-            const res = await fetch(`/api/awards/event/${id}`);
+            const res = await fetch(`${API_BASE}/api/awards/event/${id}`);
             if (!res.ok) {
                 setAwards([]);
                 return;

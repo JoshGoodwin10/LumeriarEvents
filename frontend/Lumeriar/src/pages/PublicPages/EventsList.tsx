@@ -1,6 +1,7 @@
 // src/pages/PublicPages/EventsList.tsx (or Events.tsx – adjust path accordingly)
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE } from '../../api/client';  // adjust path
 
 interface Event {
     event_id: number;
@@ -24,7 +25,7 @@ const Events: React.FC = () => {
     useEffect(() => {
         const fetchEvents = async () => {
             try {
-                const response = await fetch('/api/events');
+                const response = await fetch(`${API_BASE}/api/events`);
                 if (!response.ok) throw new Error('Failed to fetch events');
                 const data = await response.json();
                 setEvents(data);
