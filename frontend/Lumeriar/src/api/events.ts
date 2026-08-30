@@ -84,24 +84,28 @@ export interface EventDetails {
     teams: TeamInEvent[];
 }
 
-// Public GET endpoints
+// ─── PUBLIC GET endpoints (no auth required) ──────────────────
+
 export async function fetchEvents(filters: EventFilters = {}): Promise<Event[]> {
     const params = new URLSearchParams();
     if (filters.search) params.append("search", filters.search);
     if (filters.category) params.append("category", filters.category);
-    const res = await fetch(`/api/events?${params.toString()}`);
+    // ✅ Use API_BASE
+    const res = await fetch(`${API_BASE}/api/events?${params.toString()}`);
     if (!res.ok) throw new Error("Failed to fetch events");
     return res.json();
 }
 
 export async function fetchEventFilterOptions(): Promise<EventFilterOptions> {
-    const res = await fetch("/api/events/filter-options");
+    // ✅ Use API_BASE
+    const res = await fetch(`${API_BASE}/api/events/filter-options`);
     if (!res.ok) throw new Error("Failed to fetch filter options");
     return res.json();
 }
 
 export async function fetchEventDetails(eventId: number): Promise<EventDetails> {
-    const res = await fetch(`/api/events/${eventId}/details`);
+    // ✅ Use API_BASE
+    const res = await fetch(`${API_BASE}/api/events/${eventId}/details`);
     if (!res.ok) {
         const err = await res.json().catch(() => ({ message: 'Failed to fetch event details' }));
         throw new Error(err.message || `HTTP ${res.status}`);
@@ -109,11 +113,13 @@ export async function fetchEventDetails(eventId: number): Promise<EventDetails> 
     return res.json();
 }
 
-// Protected write operations (auth required)
+// ─── PROTECTED endpoints (auth required) ─────────────────────
+
 export type EventPayload = Omit<Event, "event_id" | "created_at" | "team_count">;
 
 export async function createEvent(payload: EventPayload): Promise<{ event_id: number }> {
-    const res = await authFetch("/api/events", {
+    // ✅ Use API_BASE
+    const res = await authFetch(`${API_BASE}/api/events`, {
         method: "POST",
         body: JSON.stringify(payload),
     });
@@ -121,19 +127,21 @@ export async function createEvent(payload: EventPayload): Promise<{ event_id: nu
 }
 
 export async function updateEvent(eventId: number, payload: Partial<EventPayload>): Promise<void> {
-    await authFetch(`/api/events/${eventId}`, {
+    // ✅ Use API_BASE
+    await authFetch(`${API_BASE}/api/events/${eventId}`, {
         method: "PUT",
         body: JSON.stringify(payload),
     });
 }
 
 export async function deleteEvent(eventId: number): Promise<void> {
-    await authFetch(`/api/events/${eventId}`, { method: "DELETE" });
+    // ✅ Use API_BASE
+    await authFetch(`${API_BASE}/api/events/${eventId}`, { method: "DELETE" });
 }
 
-// ─── NEW: Update only head_judge ──────────────────────────────
 export async function updateHeadJudge(eventId: number, headJudgeId: number | null): Promise<void> {
-    await authFetch(`/api/events/${eventId}/head-judge`, {
+    // ✅ Use API_BASE
+    await authFetch(`${API_BASE}/api/events/${eventId}/head-judge`, {
         method: "PUT",
         body: JSON.stringify({ head_judge: headJudgeId }),
     });
