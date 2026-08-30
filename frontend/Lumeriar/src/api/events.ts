@@ -130,3 +130,11 @@ export async function updateEvent(eventId: number, payload: Partial<EventPayload
 export async function deleteEvent(eventId: number): Promise<void> {
     await authFetch(`/api/events/${eventId}`, { method: "DELETE" });
 }
+
+// ─── NEW: Update only head_judge ──────────────────────────────
+export async function updateHeadJudge(eventId: number, headJudgeId: number | null): Promise<void> {
+    await authFetch(`/api/events/${eventId}/head-judge`, {
+        method: "PUT",
+        body: JSON.stringify({ head_judge: headJudgeId }),
+    });
+}

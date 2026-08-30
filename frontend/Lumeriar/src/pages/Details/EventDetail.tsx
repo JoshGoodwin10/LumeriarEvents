@@ -3,9 +3,11 @@ import { useState, useEffect } from "react";
 import { useParams, Link, useLocation } from "react-router-dom";
 import { createPortal } from "react-dom";
 import { fetchJudges, type Judge } from "../../api/judges";
+import { updateHeadJudge } from "../../api/events";
 import {
     fetchEventDetails,
     type TeamInEvent,
+    updateEvent,
 } from "../../api/events";
 import {
     saveScore,
@@ -46,7 +48,7 @@ interface Award {
     rank_position: number | null;
 }
 
-// ─── Score Edit Modal (unchanged) ────────────────────────────
+// ─── Score Edit Modal ────────────────────────────────────────────
 function ScoreModal({
     eventId,
     eventTeamId,
@@ -74,7 +76,6 @@ function ScoreModal({
     onClose: () => void;
     onSaved: () => void;
 }) {
-    // (unchanged – same as before)
     const [form, setForm] = useState({
         judge_id: existingScore?.judge_id ?? (allJudges[0]?.judge_id || 0),
         technical_score: existingScore?.technical_score ?? "",
@@ -176,7 +177,7 @@ function ScoreModal({
     );
 }
 
-// ─── Score History Modal (unchanged) ─────────────────────────
+// ─── Score History Modal ─────────────────────────────────────────
 function HistoryModal({ scoreId, onClose }: { scoreId: number; onClose: () => void }) {
     const [history, setHistory] = useState<ScoreHistory[]>([]);
     const [loading, setLoading] = useState(true);
@@ -213,7 +214,7 @@ function HistoryModal({ scoreId, onClose }: { scoreId: number; onClose: () => vo
     );
 }
 
-// ─── Assign Judge Modal (with centered button) ──────────────
+// ─── Assign Judge Modal ──────────────────────────────────────────
 function AssignJudgeModal({
     teamName,
     eventTeamId,
@@ -301,6 +302,76 @@ function AssignJudgeModal({
     );
 }
 
+// ─── Assign Head Judge Modal ───────────────────────────────────
+function AssignHeadJudgeModal({
+    eventId,
+    currentHeadJudgeId,
+    allJudges,
+    onClose,
+    onSaved,
+}: {
+    eventId: number;
+    currentHeadJudgeId: number | null;
+    allJudges: Judge[];
+    onClose: () => void;
+    onSaved: () => void;
+}) {
+    const [selectedJudgeId, setSelectedJudgeId] = useState<number | null>(currentHeadJudgeId);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState("");
+
+    const handleSave = async () => {
+        if (!selectedJudgeId) {
+            setError("Please select a judge.");
+            return;
+        }
+        setSaving(true);
+        setError("");
+        try {
+            await updateHeadJudge(eventId, selectedJudgeId);
+            onSaved();
+        } catch (err: any) {
+            setError(err.message || "Failed to assign head judge.");
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return createPortal(
+        <div className="tdm-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
+            <div className="tdm-box" onClick={(e) => e.stopPropagation()}>
+                <div className="tdm-head">
+                    <h2 className="tdm-title">Assign Head Judge</h2>
+                    <button className="tdm-close" onClick={onClose}>×</button>
+                </div>
+                <div className="tdm-field">
+                    <label className="tdm-label">Select Head Judge</label>
+                    <select
+                        className="tdm-input"
+                        value={selectedJudgeId ?? ""}
+                        onChange={(e) => setSelectedJudgeId(Number(e.target.value))}
+                    >
+                        <option value="">-- Select a judge --</option>
+                        {allJudges.map((judge) => (
+                            <option key={judge.judge_id} value={judge.judge_id}>
+                                {judge.first_name} {judge.surname}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+                {error && <p className="tdm-error">{error}</p>}
+                <div className="tdm-actions">
+                    <button className="btn-secondary" onClick={onClose}>Cancel</button>
+                    <button className="btn-primary" onClick={handleSave} disabled={saving}>
+                        {saving ? "Saving..." : "Assign"}
+                    </button>
+                </div>
+            </div>
+        </div>,
+        document.body
+    );
+}
+
 // ─── Main Component ────────────────────────────────────────────
 export default function EventDetail() {
     const { id } = useParams<{ id: string }>();
@@ -308,7 +379,7 @@ export default function EventDetail() {
     const queryParams = new URLSearchParams(location.search);
     const allowApprove = queryParams.get('approve') === 'true';
 
-    const [event, setEvent] = useState<{ name: string; date: string; category: string | null } | null>(null);
+    const [event, setEvent] = useState<{ name: string; date: string; category: string | null; head_judge?: number | null } | null>(null);
     const [teams, setTeams] = useState<ExtendedTeam[]>([]);
     const [allJudges, setAllJudges] = useState<Judge[]>([]);
     const [awards, setAwards] = useState<Award[]>([]);
@@ -319,6 +390,7 @@ export default function EventDetail() {
     const [assigningJudge, setAssigningJudge] = useState<{ event_team_id: number; team_name: string } | null>(null);
     const [showNominationModal, setShowNominationModal] = useState(false);
     const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
+    const [showHeadJudgeModal, setShowHeadJudgeModal] = useState(false);
 
     const loadData = async () => {
         if (!id) return;
@@ -418,23 +490,36 @@ export default function EventDetail() {
         return acc;
     }, {} as Record<string, Award[]>);
 
+    // Find current head judge
+    const currentHeadJudge = event.head_judge ? allJudges.find(j => j.judge_id === event.head_judge) : null;
+
     return (
         <div className="td-root">
             <div className="td-header">
                 <div>
                     <h1 className="td-title">{event.name}</h1>
                     <p className="td-subtitle">{new Date(event.date).toLocaleDateString()} · {event.category || "Uncategorized"}</p>
+                    {currentHeadJudge && (
+                        <p className="td-subtitle" style={{ marginTop: '0.25rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                            Head Judge: {currentHeadJudge.first_name} {currentHeadJudge.surname}
+                        </p>
+                    )}
                 </div>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    {allowApprove && (
-                        <button className="btn-primary" onClick={generateAwards}>
-                            Generate Awards
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    {!allowApprove && (
+                        <button className="btn-secondary" onClick={() => setShowHeadJudgeModal(true)}>
+                            {currentHeadJudge ? 'Change Head Judge' : 'Assign Head Judge'}
                         </button>
                     )}
                     {allowApprove && (
-                        <button className="btn-primary" onClick={() => setShowNominationModal(true)}>
-                            Nominate Most Improved
-                        </button>
+                        <>
+                            <button className="btn-primary" onClick={generateAwards}>
+                                Generate Awards
+                            </button>
+                            <button className="btn-primary" onClick={() => setShowNominationModal(true)}>
+                                Nominate Most Improved
+                            </button>
+                        </>
                     )}
                     <Link to="/events" className="btn-secondary">← Back to Events</Link>
                 </div>
@@ -575,7 +660,7 @@ export default function EventDetail() {
                 </div>
             </div>
 
-            {/* Modals (unchanged) */}
+            {/* Modals */}
             {editingScore && (
                 <ScoreModal
                     eventId={Number(id)}
@@ -630,6 +715,19 @@ export default function EventDetail() {
                     </div>
                 </div>,
                 document.body
+            )}
+
+            {showHeadJudgeModal && (
+                <AssignHeadJudgeModal
+                    eventId={Number(id)}
+                    currentHeadJudgeId={event.head_judge || null}
+                    allJudges={allJudges}
+                    onClose={() => setShowHeadJudgeModal(false)}
+                    onSaved={() => {
+                        setShowHeadJudgeModal(false);
+                        loadData();
+                    }}
+                />
             )}
         </div>
     );

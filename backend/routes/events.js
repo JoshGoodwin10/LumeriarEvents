@@ -173,7 +173,7 @@ router.get("/:eventId/leaderboard", async (req, res) => {
                 technical_score, innovation_design_score, theme_score,
                 real_world_score, teamwork_score, is_approved
             FROM score
-            WHERE event_team_id IN (${placeholders}) AND is_approved = 1
+            WHERE event_team_id IN (${placeholders})
             ORDER BY event_team_id, round
         `, eventTeamIds);
 
@@ -224,7 +224,7 @@ router.post("/", async (req, res) => {
     }
 });
 
-// PUT /api/events/:id – with rounds and head_judge fields
+// PUT /api/events/:id – with rounds and head_judge fields (full update)
 router.put("/:id", async (req, res) => {
     const { name, date, venue, rounds, start_time, end_time, registration_open, category, head_judge } = req.body;
     if (!name || !date) return res.status(400).json({ message: "Event name and date are required." });
@@ -240,6 +240,34 @@ router.put("/:id", async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Failed to update event." });
+    }
+});
+
+// ─── NEW: Dedicated endpoint to update only head_judge ─────────
+router.put("/:id/head-judge", async (req, res) => {
+    const { head_judge } = req.body;
+    const eventId = req.params.id;
+
+    // head_judge can be null (to clear the head judge) or a number
+    if (head_judge === undefined) {
+        return res.status(400).json({ message: "head_judge field is required." });
+    }
+
+    try {
+        // Check if event exists
+        const [existing] = await db.execute("SELECT * FROM event WHERE event_id = ?", [eventId]);
+        if (existing.length === 0) return res.status(404).json({ message: "Event not found." });
+
+        // Update only head_judge
+        await db.execute(
+            "UPDATE event SET head_judge = ? WHERE event_id = ?",
+            [head_judge || null, eventId]
+        );
+
+        res.json({ message: "Head judge updated successfully." });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Failed to update head judge." });
     }
 });
 

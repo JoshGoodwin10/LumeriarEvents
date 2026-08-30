@@ -7,7 +7,7 @@ interface EventInfo {
     name: string;
     date: string;
     venue: string;
-    category: string;          // added
+    category: string;
 }
 
 interface Student {
@@ -55,6 +55,9 @@ const PROVINCES = [
     "Eastern Cape", "Free State", "Gauteng", "KwaZulu-Natal",
     "Limpopo", "Mpumalanga", "North West", "Northern Cape", "Western Cape"
 ];
+
+// Thematic Focus options
+const THEMES = ["Agriculture", "Social Impact", "Climate and Environment"];
 
 const emptyStudent = (id: number): Student => ({
     id,
@@ -372,7 +375,16 @@ const Register: React.FC = () => {
                         </div>
                         <div className="form-group">
                             <label>Thematic Focus *</label>
-                            <input type="text" value={team.thematic_focus} onChange={e => handleTeamChange('thematic_focus', e.target.value)} />
+                            <select
+                                value={team.thematic_focus}
+                                onChange={e => handleTeamChange('thematic_focus', e.target.value)}
+                                required
+                            >
+                                <option value="">Select a thematic focus</option>
+                                {THEMES.map(theme => (
+                                    <option key={theme} value={theme}>{theme}</option>
+                                ))}
+                            </select>
                         </div>
                         <div className="form-group">
                             <label>School Province *</label>

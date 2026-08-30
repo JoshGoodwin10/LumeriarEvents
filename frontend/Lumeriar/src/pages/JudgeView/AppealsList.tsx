@@ -264,7 +264,7 @@ export default function AppealsList() {
                                         {appeal.status === 'approved' && <span className="status-approved">✅ Approved</span>}
                                         {appeal.status === 'rejected' && <span className="status-rejected">❌ Rejected</span>}
                                     </td>
-                                    <td>
+                                    <td style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                                         {appeal.status === 'pending' && (
                                             <button
                                                 className="btn-primary btn-sm"

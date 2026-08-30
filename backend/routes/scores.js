@@ -123,7 +123,7 @@ async function recalcTeamTotalPoints(event_team_id) {
             COALESCE(teamwork_score,0)
         ) AS total
         FROM score
-        WHERE event_team_id = ? AND is_approved = TRUE
+        WHERE event_team_id = ?
     `, [event_team_id]);
     const total = rows[0].total || 0;
     await db.execute("UPDATE event_team SET total_points = ? WHERE event_team_id = ?", [total, event_team_id]);

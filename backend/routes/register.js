@@ -3,6 +3,7 @@ const express = require('express');
 const multer = require('multer');
 const db = require('../db');
 const sendEmail = require('../utils/email');   // 👈 import EmailJS utility
+const bcrypt = require('bcrypt');
 
 const router = express.Router();
 
@@ -289,7 +290,7 @@ router.put('/:id/approve', async (req, res) => {
         );
         const coachReq = coachReqRows[0];
 
-        // 1b. Get event details for email
+        // 2. Get event details for email (optional)
         const [eventRows] = await connection.execute(
             `SELECT name, date, venue, start_time, end_time, category 
              FROM event WHERE event_id = ?`,
@@ -297,41 +298,64 @@ router.put('/:id/approve', async (req, res) => {
         );
         const event = eventRows[0];
 
-        // 2. Find or create coach by email (avoid duplication)
+        // 3. Find or create coach by email (avoid duplication)
         let coachId = null;
-        // After coach is created/retrieved (coachId)
         if (coachReq) {
-            // Check if coach already has a password
-            const [coachRows] = await connection.execute(
-                'SELECT password_hash FROM coach WHERE coach_id = ?',
-                [coachId]
+            const [existingCoach] = await connection.execute(
+                `SELECT coach_id FROM coach WHERE email = ?`,
+                [coachReq.email]
             );
-            if (coachRows.length === 1 && !coachRows[0].password_hash) {
+            if (existingCoach.length > 0) {
+                coachId = existingCoach[0].coach_id;
+                // Optionally update existing coach with new info? Skipping for now.
+            } else {
                 // Generate password: first_name + surname + year_of_birth
                 const rawPassword = `${coachReq.first_name}${coachReq.surname}${new Date(coachReq.date_of_birth).getFullYear()}`;
                 const hashedPassword = bcrypt.hashSync(rawPassword, 10);
-                await connection.execute(
-                    'UPDATE coach SET password_hash = ? WHERE coach_id = ?',
-                    [hashedPassword, coachId]
-                );
 
-                // After generating password and hashing it:
-                await sendEmail(
-                    coachReq.email,
-                    'Your Lumeriar Coach Account',
-                    {
-                        name: `${coachReq.first_name} ${coachReq.surname}`,
-                        role: 'Coach',
-                        email: coachReq.email,
-                        password: rawPassword
-                    },
-                    process.env.EMAILJS_TEMPLATE_PASSWORD   // use the unified password template
+                const [coachResult] = await connection.execute(
+                    `INSERT INTO coach 
+                    (first_name, surname, email, phone_no, date_of_birth, staff_number, 
+                     dietary_requirements, shirt_size, signed_integrity_declaration, school_id, password_hash, created_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+                    [
+                        coachReq.first_name,
+                        coachReq.surname,
+                        coachReq.email,
+                        coachReq.phone_no,
+                        coachReq.date_of_birth,
+                        coachReq.staff_number,
+                        coachReq.dietary_requirements,
+                        coachReq.shirt_size,
+                        coachReq.signed_integrity_declaration,
+                        teamReq.school_id,
+                        hashedPassword
+                    ]
                 );
-                console.log(`✅ Coach login created for ${coachReq.email}`);
+                coachId = coachResult.insertId;
+
+                // Send email with credentials
+                try {
+                    await sendEmail(
+                        coachReq.email,
+                        'Your Lumeriar Coach Account',
+                        {
+                            name: `${coachReq.first_name} ${coachReq.surname}`,
+                            role: 'Coach',
+                            email: coachReq.email,
+                            password: rawPassword,
+                            login_url: process.env.FRONTEND_URL + '/login',
+                        },
+                        process.env.EMAILJS_TEMPLATE_PASSWORD
+                    );
+                    console.log(`✅ Coach login email sent to ${coachReq.email}`);
+                } catch (emailError) {
+                    console.error(`❌ Failed to send coach email:`, emailError.message);
+                }
             }
         }
 
-        // 3. Create team record (without BLOBs initially)
+        // 4. Create team record (without BLOBs initially)
         const [teamResult] = await connection.execute(
             `INSERT INTO team 
             (team_name, category, school_id, theme, province, event, project_description, how_heard, coach_id, created_at)
@@ -350,13 +374,13 @@ router.put('/:id/approve', async (req, res) => {
         );
         const teamId = teamResult.insertId;
 
-        // 4. Copy BLOB fields from team_request to team
+        // 5. Copy BLOB fields from team_request to team
         await copyBlobIfExists(connection, requestId, teamId, 'material_bill');
         await copyBlobIfExists(connection, requestId, teamId, 'engineering_plan');
         await copyBlobIfExists(connection, requestId, teamId, 'project_report');
         await copyBlobIfExists(connection, requestId, teamId, 'engineering_journal');
 
-        // 5. Create student records
+        // 6. Create student records
         for (const student of studentsReq) {
             await connection.execute(
                 `INSERT INTO student 
@@ -378,7 +402,7 @@ router.put('/:id/approve', async (req, res) => {
             );
         }
 
-        // 6. Create event_team record
+        // 7. Create event_team record
         const [eventTeamResult] = await connection.execute(
             `INSERT INTO event_team (team_id, event_id, total_points, created_at)
              VALUES (?, ?, 0, NOW())`,
@@ -386,14 +410,14 @@ router.put('/:id/approve', async (req, res) => {
         );
         const eventTeamId = eventTeamResult.insertId;
 
-        // 7. Get total number of rounds for this event
+        // 8. Get total number of rounds for this event
         const [roundsRow] = await connection.execute(
             `SELECT rounds FROM event WHERE event_id = ?`,
             [teamReq.event]
         );
         const totalRounds = roundsRow[0]?.rounds || 1;
 
-        // 8. Create empty score rows for each round (1 to totalRounds)
+        // 9. Create empty score rows for each round (1 to totalRounds)
         for (let round = 1; round <= totalRounds; round++) {
             await connection.execute(
                 `INSERT INTO score 
@@ -404,7 +428,7 @@ router.put('/:id/approve', async (req, res) => {
             );
         }
 
-        // 9. Mark request as approved
+        // 10. Mark request as approved
         await connection.execute(
             `UPDATE team_request SET is_approved = 1 WHERE request_id = ?`,
             [requestId]
@@ -412,7 +436,7 @@ router.put('/:id/approve', async (req, res) => {
 
         await connection.commit();
 
-        // 10. Send confirmation email using EmailJS (rich HTML)
+        // 11. Send confirmation email using EmailJS (rich HTML)
         if (coachReq && coachReq.email) {
             // Build HTML table rows for students
             let studentsHtml = '';
@@ -451,7 +475,7 @@ router.put('/:id/approve', async (req, res) => {
             }
         }
 
-        res.json({ message: 'Request approved, team created, and email sent.' });
+        res.json({ message: 'Request approved, team created, and coach created.' });
     } catch (err) {
         if (connection) await connection.rollback();
         console.error('Approval error:', err);
@@ -531,6 +555,19 @@ router.get('/:id/download/coach/integrity', async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Download failed.' });
+    }
+});
+
+// PUT /api/register/:id/reject
+router.put('/:id/reject', async (req, res) => {
+    const requestId = req.params.id;
+    try {
+        const [result] = await db.execute('UPDATE team_request SET is_approved = -1 WHERE request_id = ?', [requestId]);
+        if (result.affectedRows === 0) return res.status(404).json({ message: 'Request not found.' });
+        res.json({ message: 'Request rejected.' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Failed to reject request.' });
     }
 });
 

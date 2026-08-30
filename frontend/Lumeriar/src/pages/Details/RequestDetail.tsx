@@ -1,6 +1,7 @@
 // src/pages/Details/RequestDetail.tsx
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 import '../../layout/details.css';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -66,6 +67,8 @@ export default function RequestDetail() {
     const [students, setStudents] = useState<Student[]>([]);
     const [coach, setCoach] = useState<Coach | null>(null);
     const [approving, setApproving] = useState(false);
+    const [rejecting, setRejecting] = useState(false);
+    const [showRejectConfirm, setShowRejectConfirm] = useState(false);
     const [downloading, setDownloading] = useState<string | null>(null);
 
     useEffect(() => {
@@ -101,6 +104,24 @@ export default function RequestDetail() {
             alert(err.message);
         } finally {
             setApproving(false);
+        }
+    };
+
+    const handleReject = async () => {
+        setRejecting(true);
+        try {
+            const res = await fetch(`/api/register/${id}/reject`, {
+                method: 'PUT',
+                headers: authHeaders(),
+            });
+            if (!res.ok) throw new Error('Rejection failed');
+            alert('Request rejected.');
+            navigate('/requests');
+        } catch (err: any) {
+            alert(err.message);
+        } finally {
+            setRejecting(false);
+            setShowRejectConfirm(false);
         }
     };
 
@@ -140,6 +161,9 @@ export default function RequestDetail() {
         { key: 'engineering_journal', label: 'Engineering Journal', exists: team.has_engineering_journal },
     ];
 
+    const statusText = team.is_approved === 1 ? 'Approved' : team.is_approved === -1 ? 'Rejected' : 'Pending';
+    const isProcessed = team.is_approved !== 0;
+
     return (
         <div className="td-root">
             <div className="td-header">
@@ -151,18 +175,43 @@ export default function RequestDetail() {
             </div>
 
             <div className="detail-card" style={{ textAlign: 'center' }}>
-                <p><strong>Status:</strong> {team.is_approved ? 'Approved' : 'Pending'}</p>
-                {!team.is_approved && (
-                    <div style={{ display: 'flex', justifyContent: 'center', marginTop: '0.5rem' }}>
-                        <button className="btn-primary" onClick={handleApprove} disabled={approving}>
+                <p><strong>Status:</strong> {statusText}</p>
+                {!isProcessed && (
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '0.5rem' }}>
+                        <button className="btn-primary" onClick={handleApprove} disabled={approving || rejecting}>
                             {approving ? 'Approving...' : 'Approve Request'}
+                        </button>
+                        <button className="btn-danger" onClick={() => setShowRejectConfirm(true)} disabled={approving || rejecting}>
+                            Reject Request
                         </button>
                     </div>
                 )}
                 <p style={{ marginTop: '1rem' }}><strong>Submitted:</strong> {new Date(team.created_at).toLocaleString()}</p>
             </div>
 
-            {/* ─── Team Information – 2 rows × 4 columns ─── */}
+            {/* Reject Confirmation Modal */}
+            {showRejectConfirm && createPortal(
+                <div className="tdm-backdrop" onClick={() => setShowRejectConfirm(false)}>
+                    <div className="tdm-box" onClick={(e) => e.stopPropagation()}>
+                        <div className="tdm-head">
+                            <h2 className="tdm-title">Reject Request</h2>
+                            <button className="tdm-close" onClick={() => setShowRejectConfirm(false)}>×</button>
+                        </div>
+                        <p className="tdm-delete-msg">
+                            Are you sure you want to reject this registration request from <strong>{team.team_name}</strong>? This action cannot be undone.
+                        </p>
+                        <div className="tdm-actions">
+                            <button className="btn-secondary" onClick={() => setShowRejectConfirm(false)}>Cancel</button>
+                            <button className="btn-danger" onClick={handleReject} disabled={rejecting}>
+                                {rejecting ? 'Rejecting...' : 'Reject'}
+                            </button>
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            )}
+
+            {/* Team Information – 2 rows × 4 columns */}
             <div className="detail-card">
                 <h3>Team Information</h3>
                 <div className="detail-grid detail-grid-2x4">
@@ -177,6 +226,7 @@ export default function RequestDetail() {
                 </div>
             </div>
 
+            {/* Team Documents */}
             <div className="detail-card">
                 <h3>Team Documents</h3>
                 <div className="list">
@@ -195,6 +245,7 @@ export default function RequestDetail() {
                 {!teamFileFields.some(f => f.exists) && <p>No team documents uploaded.</p>}
             </div>
 
+            {/* Students */}
             {students.length > 0 && (
                 <div className="detail-card">
                     <h3>Students ({students.length})</h3>
@@ -226,6 +277,7 @@ export default function RequestDetail() {
                 </div>
             )}
 
+            {/* Coach */}
             {coach && (
                 <div className="detail-card">
                     <h3>Coach</h3>
