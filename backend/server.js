@@ -26,7 +26,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ── Middleware ────────────────────────────────────────────────
 app.use(cors({
-  origin: "https://lumeriarevents.netlify.app/",
+  origin: "https://lumeriarevents.netlify.app",
   credentials: true,
 }));
 app.use(express.json());
